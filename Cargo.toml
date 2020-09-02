@@ -4,8 +4,21 @@ version = "0.1.0"
 authors = ["Lily Sturmann <lsturman@redhat.com>", "Nathaniel McCallum <npmccallum@redhat.com>"]
 license = "Apache-2.0"
 edition = "2018"
+homepage = "https://github.com/enarx/sgx"
+repository = "https://github.com/enarx/sgx"
+description = "Library for Intel SGX"
+readme = "README.md"
+keywords = ["intel", "sgx"]
+categories = ["os", "os::linux-apis", "parsing", "network-programming", "hardware-support"]
+exclude = [ ".gitignore", ".github/*" ]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[badges]
+# See https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section
+github = { repository = "enarx/sgx", workflow = "test" }
+#github = { repository = "enarx/sgx", workflow = "lint" }
+maintenance = { status = "actively-developed" }
+is-it-maintained-issue-resolution = { repository = "enarx/sgx" }
+is-it-maintained-open-issues = { repository = "enarx/sgx" }
 
 [features]
 default = ["std", "crypto"]
