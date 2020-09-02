@@ -348,15 +348,8 @@ testaso! {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    use crate::types::page::{Flags as Perms, SecInfo};
-
-    use primordial::Page;
-
-    use std::fs::File;
-    use std::io::Read;
+mod author {
+    use super::Author;
 
     #[test]
     fn author_instantiation() {
@@ -373,6 +366,18 @@ mod tests {
         assert_eq!(author.swdefined, 0u32);
         assert_eq!(author.reserved, [0; 21]);
     }
+}
+
+#[cfg(all(test, feature = "crypto"))]
+mod crypto {
+    use super::*;
+
+    use crate::types::page::{Flags as Perms, SecInfo};
+
+    use primordial::Page;
+
+    use std::fs::File;
+    use std::io::Read;
 
     fn load(path: &str) -> Vec<u8> {
         let mut file = File::open(path).unwrap();

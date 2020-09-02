@@ -5,7 +5,7 @@
 //! https://www.intel.com/content/dam/www/public/emea/xe/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3d-part-4-manual.pdf
 
 #![cfg_attr(feature = "asm", feature(asm))]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![deny(clippy::all)]
 #![allow(clippy::identity_op)]
 #![deny(missing_docs)]
