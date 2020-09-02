@@ -21,9 +21,9 @@ is-it-maintained-issue-resolution = { repository = "enarx/sgx" }
 is-it-maintained-open-issues = { repository = "enarx/sgx" }
 
 [features]
-default = ["std", "crypto"]
-std = ["iocuddle", "libc", "mmarinus", "vdso"]
+default = []
 crypto = ["std", "openssl"]
+std = ["iocuddle", "libc", "mmarinus", "vdso"]
 asm = ["xsave/asm"]
 
 [dependencies]
