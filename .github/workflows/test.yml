@@ -1,0 +1,73 @@
+on: [push, pull_request]
+name: test
+jobs:
+  sw:
+    name: sw ${{ matrix.toolchain }} ${{ matrix.profile.name }} ${{ matrix.features }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: ${{ matrix.profile.flag }} --features=${{ matrix.features }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - 1.41.0
+          - stable
+          - beta
+          - nightly
+        features:
+          -
+          - std
+          - crypto
+        profile:
+          - {name: debug}
+          - {name: release, flag: --release}
+        include:
+          - toolchain: nightly
+            features: asm
+            profile: {name: debug}
+          - toolchain: nightly
+            features: asm
+            profile: {name: release, flag: --release}
+          - toolchain: nightly
+            features: asm,std
+            profile: {name: debug}
+          - toolchain: nightly
+            features: asm,std
+            profile: {name: release, flag: --release}
+          - toolchain: nightly
+            features: asm,crypto
+            profile: {name: debug}
+          - toolchain: nightly
+            features: asm,crypto
+            profile: {name: release, flag: --release}
+
+  hw:
+    name: hw ${{ matrix.toolchain }} ${{ matrix.profile.name }} *
+    runs-on: [self-hosted, linux, sgx1]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: ${{ matrix.profile.flag }} --all-features
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - nightly
+        profile:
+          - name: debug
+          - name: release
+            flag: --release
