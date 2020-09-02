@@ -27,10 +27,10 @@ std = ["iocuddle", "libc", "mmarinus", "vdso"]
 asm = ["xsave/asm"]
 
 [dependencies]
-openssl = { version = "0.10", features = ["vendored"], optional = true }
 xsave = { version = "0.1.1", default-features = false }
 iocuddle = { version = "0.1", optional = true }
 mmarinus = { version = "0.2", optional = true }
+openssl = { version = "0.10", optional = true }
 libc = { version = "0.2", optional = true }
 vdso = { version = "0.1", optional = true }
 primordial = "0.1"
