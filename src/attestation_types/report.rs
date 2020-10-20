@@ -5,9 +5,13 @@
 
 use crate::types::{attr::Attributes, isv, misc::MiscSelect};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// This struct is separated out from the Report to be usable by the Quote struct.
 /// Table 38-21
 #[derive(Default, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(C)]
 pub struct Body {
     /// The security version number of the processor
@@ -50,6 +54,7 @@ pub struct Body {
 
 /// Table 38-21
 #[derive(Default, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(C, align(512))]
 pub struct Report {
     /// The body of the Report
