@@ -3,8 +3,12 @@
 //! Attributes (Section 38.7.1)
 //! The attributes of an enclave are specified by the struct below as described.
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 bitflags::bitflags! {
     /// Section 38.7.1.
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct Flags: u64 {
         /// Enclave has been initialized by EINIT.
         const INIT = 1 << 0;
@@ -31,6 +35,7 @@ impl Default for Flags {
 
 bitflags::bitflags! {
     /// Section 42.7.2.1; more info can be found at https://en.wikipedia.org/wiki/Control_register.
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct Xfrm: u64 {
         /// x87 FPU/MMX State, note, must be '1'.
         const X87 = 1 << 0;
@@ -66,6 +71,7 @@ impl Default for Xfrm {
 /// Section 38.7.1.
 #[repr(C, packed(4))]
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Attributes {
     flags: Flags,
     xfrm: Xfrm,
