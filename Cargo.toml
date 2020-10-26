@@ -40,7 +40,7 @@ lset = "0.1"
 
 [dev-dependencies]
 rstest = "0.6"
-memoffset = "0.5.5"
+memoffset = "0.6.1"
 
 [build-dependencies]
 cc = "1.0"
