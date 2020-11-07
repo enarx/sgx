@@ -77,7 +77,6 @@ macro_rules! testaso {
 #[cfg(feature = "crypto")]
 pub mod crypto;
 
-#[cfg(feature = "std")]
 pub mod attestation_types;
 
 #[cfg(feature = "std")]
