@@ -6,6 +6,5 @@
 
 #[cfg(feature = "std")]
 pub mod quote;
-
 pub mod report;
 pub mod ti;

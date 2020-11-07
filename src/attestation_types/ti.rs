@@ -7,7 +7,7 @@
 use crate::types::{attr::Attributes, misc::MiscSelect};
 
 /// Table 38-22
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 #[repr(C, align(512))]
 pub struct TargetInfo {
     /// MRENCLAVE of the target enclave.
