@@ -102,7 +102,7 @@ impl Secs {
 
         // Test for max enclave size
         let res = unsafe { __cpuid_count(LEAF_MAX_ENCL_SIZE, SUBLEAF_MAX_ENCL_SIZE) };
-        let max_size: u64 = 1 << (res.edx >> 8 as u8) as u64;
+        let max_size: u64 = 1 << (res.edx >> 8u8) as u64;
 
         NonZeroUsize::new(max_size as usize)
     }
