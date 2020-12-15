@@ -125,6 +125,7 @@ pub struct SigData {
 }
 
 /// The type of Attestation Key used to sign the Report.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[repr(u16)]
 pub enum AttestationKeyType {
     /// ECDSA-256-with-P-256 curve
@@ -137,6 +138,18 @@ pub enum AttestationKeyType {
 impl Default for AttestationKeyType {
     fn default() -> Self {
         AttestationKeyType::ECDSA256P256
+    }
+}
+
+impl TryFrom<u16> for AttestationKeyType {
+    type Error = QuoteError;
+
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        match value {
+            2 => Ok(AttestationKeyType::ECDSA256P256),
+            3 => Ok(AttestationKeyType::ECDSA384P384),
+            _ => Err(QuoteError(format!("Unknown value: {}", value))),
+        }
     }
 }
 
