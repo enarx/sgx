@@ -155,8 +155,37 @@ impl Default for QuoteHeader {
     }
 }
 
+/// Wrapper struct for the u32 indicating the signature data length
+/// (described in A.4).
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct SigDataLen(u32);
+
+impl SigDataLen {
+    /// Creates a SigDataLen from a u32.
+    pub fn from_u32(val: u32) -> Self {
+        SigDataLen(val)
+    }
+}
+
+impl Default for SigDataLen {
+    fn default() -> Self {
+        SigDataLen(ECDSASIGLEN)
+    }
+}
+
+impl From<&[u8; 4]> for SigDataLen {
+    fn from(bytes: &[u8; 4]) -> Self {
+        let mut tmp = [0u8; 4];
+        tmp.copy_from_slice(&bytes[0..4]);
+        let len = u32::from_le_bytes(tmp);
+        SigDataLen::from_u32(len)
+    }
+}
+
 /// Section A.4
 /// All integer fields are in little endian.
+#[derive(Default)]
 #[repr(C, align(4))]
 pub struct Quote {
     /// Header for Quote structure; transparent to the user.
@@ -166,22 +195,11 @@ pub struct Quote {
     isv_enclave_report: Body,
 
     /// Size of the Signature Data field.
-    sig_data_len: u32,
+    sig_data_len: SigDataLen,
 
     /// Variable-length data containing the signature and
     /// supporting data.
     sig_data: SigData,
-}
-
-impl Default for Quote {
-    fn default() -> Self {
-        Self {
-            header: Default::default(),
-            isv_enclave_report: Default::default(),
-            sig_data_len: ECDSASIGLEN,
-            sig_data: Default::default(),
-        }
-    }
 }
 
 #[cfg(test)]
