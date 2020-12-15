@@ -6,7 +6,7 @@
 //! https://download.01.org/intel-sgx/dcap-1.0/docs/SGX_ECDSA_QuoteGenReference_DCAP_API_Linux_1.0.pdf
 
 use super::report::Body;
-use std::vec::Vec;
+use std::{fmt, vec::Vec};
 
 /// The Quote version for DCAP is 3. Must be 2 bytes.
 pub const VERSION: u16 = 3;
@@ -18,6 +18,18 @@ pub const ECDSASIGLEN: u32 = 64;
 pub const INTELVID: [u8; 16] = [
     0x93, 0x9A, 0x72, 0x33, 0xF7, 0x9C, 0x4C, 0xA9, 0x94, 0x0A, 0x0D, 0xB3, 0x95, 0x7F, 0x06, 0x07,
 ];
+
+#[derive(Clone, Debug)]
+/// Error type for Quote module
+pub struct QuoteError(String);
+
+impl fmt::Display for QuoteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", &self.0)
+    }
+}
+
+impl std::error::Error for QuoteError {}
 
 /// Section A.4, Table 9
 #[repr(u16)]
