@@ -6,7 +6,7 @@
 //! https://download.01.org/intel-sgx/dcap-1.0/docs/SGX_ECDSA_QuoteGenReference_DCAP_API_Linux_1.0.pdf
 
 use super::report::Body;
-use std::{fmt, vec::Vec};
+use std::{convert::TryFrom, fmt, vec::Vec};
 
 /// The Quote version for DCAP is 3. Must be 2 bytes.
 pub const VERSION: u16 = 3;
@@ -32,6 +32,7 @@ impl fmt::Display for QuoteError {
 impl std::error::Error for QuoteError {}
 
 /// Section A.4, Table 9
+#[derive(Debug, Clone, Copy)]
 #[repr(u16)]
 pub enum CertDataType {
     /// Byte array that contains concatenation of PPID, CPUSVN,
@@ -63,6 +64,23 @@ pub enum CertDataType {
 impl Default for CertDataType {
     fn default() -> Self {
         Self::PCKCertChain
+    }
+}
+
+impl TryFrom<u16> for CertDataType {
+    type Error = QuoteError;
+
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(CertDataType::PpidPlaintext),
+            2 => Ok(CertDataType::PpidRSA2048OAEP),
+            3 => Ok(CertDataType::PpidRSA3072OAEP),
+            4 => Ok(CertDataType::PCKLeafCert),
+            5 => Ok(CertDataType::PCKCertChain),
+            6 => Ok(CertDataType::Quote),
+            7 => Ok(CertDataType::Manifest),
+            _ => Err(QuoteError(format!("Unknown Cert Data type: {}", value))),
+        }
     }
 }
 
