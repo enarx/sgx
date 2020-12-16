@@ -3,7 +3,7 @@
 //! The QuoteHeader is part of the Quote structure. See the Quote module for more.
 
 use super::QuoteError;
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 
 /// The Quote version for DCAP is 3. Must be 2 bytes.
 pub const VERSION: u16 = 3;

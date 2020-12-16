@@ -4,12 +4,12 @@
 
 use super::QuoteError;
 use crate::attestation_types::report::Body;
-use std::{convert::TryFrom, vec::Vec};
+use std::{convert::TryFrom, fmt, vec::Vec};
 
 /// ECDSA  signature, the r component followed by the
 /// s component, 2 x 32 bytes.
 /// A.4, Table 6
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 #[repr(C)]
 pub struct ECDSAP256Sig {
     /// r component
@@ -19,11 +19,23 @@ pub struct ECDSAP256Sig {
     pub s: [u8; 32],
 }
 
+impl From<&[u8; 64]> for ECDSAP256Sig {
+    fn from(bytes: &[u8; 64]) -> Self {
+        let mut r = [0u8; 32];
+        r.copy_from_slice(&bytes[0..32]);
+
+        let mut s = [0u8; 32];
+        s.copy_from_slice(&bytes[32..64]);
+
+        Self { r, s }
+    }
+}
+
 /// EC KT-I Public Key, the x-coordinate followed by
 /// the y-coordinate (on the RFC 6090P-256 curve),
 /// 2 x 32 bytes.
 /// A.4, Table 7
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 #[repr(C)]
 pub struct ECDSAPubKey {
     /// x coordinate
@@ -33,8 +45,20 @@ pub struct ECDSAPubKey {
     pub y: [u8; 32],
 }
 
+impl From<&[u8; 64]> for ECDSAPubKey {
+    fn from(bytes: &[u8; 64]) -> Self {
+        let mut x = [0u8; 32];
+        x.copy_from_slice(&bytes[0..32]);
+
+        let mut y = [0u8; 32];
+        y.copy_from_slice(&bytes[32..64]);
+
+        Self { x, y }
+    }
+}
+
 /// Section A.4, Table 9
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[repr(u16)]
 pub enum CertDataType {
     /// Byte array that contains concatenation of PPID, CPUSVN,
@@ -65,7 +89,7 @@ pub enum CertDataType {
 
 impl Default for CertDataType {
     fn default() -> Self {
-        Self::PCKCertChain
+        Self::PCKLeafCert
     }
 }
 
@@ -86,6 +110,20 @@ impl TryFrom<u16> for CertDataType {
     }
 }
 
+impl fmt::Display for CertDataType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CertDataType::PpidPlaintext => write!(f, "PpidPlaintext"),
+            CertDataType::PpidRSA2048OAEP => write!(f, "PpidRSA2048OAEP"),
+            CertDataType::PpidRSA3072OAEP => write!(f, "PpidRSA3072)AEP"),
+            CertDataType::PCKLeafCert => write!(f, "PCKLeafCert"),
+            CertDataType::PCKCertChain => write!(f, "PCKCertChain"),
+            CertDataType::Quote => write!(f, "Quote"),
+            CertDataType::Manifest => write!(f, "Manifest"),
+        }
+    }
+}
+
 /// A.4, Table 4
 #[derive(Default)]
 #[repr(C)]
@@ -97,4 +135,101 @@ pub struct SigData {
     qe_auth: Vec<u8>,
     qe_cert_data_type: CertDataType,
     qe_cert_data: Vec<u8>,
+}
+
+// The size of SigData is not known at compile time. It is specified in the data itself.
+impl TryFrom<&[u8]> for SigData {
+    type Error = QuoteError;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let mut tmp = [0u8; 64];
+        tmp.copy_from_slice(&bytes[0..64]);
+        let isv_enclave_report_sig = ECDSAP256Sig::from(&tmp);
+
+        tmp.copy_from_slice(&bytes[64..128]);
+        let ecdsa_attestation_key = ECDSAPubKey::from(&tmp);
+
+        let mut body = [0u8; 384];
+        body.copy_from_slice(&bytes[128..512]);
+        let qe_report = Body::try_from(&body)?;
+
+        tmp.copy_from_slice(&bytes[512..576]);
+        let qe_report_sig = ECDSAP256Sig::from(&tmp);
+
+        // QE Auth Data length is variable, specified in &bytes[576..578]
+        let mut qe_auth_len_bytes = [0u8; 2];
+        qe_auth_len_bytes.copy_from_slice(&bytes[576..578]);
+        let qe_auth_len: usize = u16::from_le_bytes(qe_auth_len_bytes).into();
+        let mut qe_auth = vec![0u8; qe_auth_len];
+        let qe_auth_end = 578usize + qe_auth_len;
+        qe_auth.copy_from_slice(&bytes[578..qe_auth_end]);
+
+        // Cert Data beginning and length is variable
+        let mut qe_cert_data_type_bytes = [0u8; 2];
+        qe_cert_data_type_bytes.copy_from_slice(&bytes[qe_auth_end..(qe_auth_end + 2)]);
+        let qe_cert_data_type =
+            CertDataType::try_from(u16::from_le_bytes(qe_cert_data_type_bytes))?;
+
+        if qe_cert_data_type != CertDataType::PCKLeafCert {
+            return Err(QuoteError(format!(
+                "Expected CertDataType::PCKLeafCert, got: {}",
+                qe_cert_data_type
+            )));
+        }
+
+        let cert_data_len_start = qe_auth_end + 2;
+        let mut cert_data_len_bytes = [0u8; 4];
+        cert_data_len_bytes.copy_from_slice(&bytes[cert_data_len_start..(cert_data_len_start + 4)]);
+        let cert_data_len = u32::from_le_bytes(cert_data_len_bytes) as usize;
+        let cert_data_start = cert_data_len_start + 4;
+        let mut qe_cert_data = vec![0u8; cert_data_len];
+        qe_cert_data.copy_from_slice(&bytes[cert_data_start..(cert_data_start + cert_data_len)]);
+
+        Ok(Self {
+            isv_enclave_report_sig,
+            ecdsa_attestation_key,
+            qe_report,
+            qe_report_sig,
+            qe_auth,
+            qe_cert_data_type,
+            qe_cert_data,
+        })
+    }
+}
+
+impl SigData {
+    /// Retrieve Report Signature
+    pub fn get_report_sig(&self) -> ECDSAP256Sig {
+        self.isv_enclave_report_sig
+    }
+
+    /// Retrieve Attestation Key used to sign Report
+    pub fn get_attkey(&self) -> ECDSAPubKey {
+        self.ecdsa_attestation_key
+    }
+
+    /// Retrieve QE Report of the QE that signed the Report
+    pub fn get_qe_report(&self) -> Body {
+        self.qe_report
+    }
+
+    /// Retrieve the QE Report Signature
+    pub fn get_qe_report_sig(&self) -> ECDSAP256Sig {
+        self.qe_report_sig
+    }
+
+    /// Retrieve the QE Auth
+    pub fn get_qe_auth(&self) -> &Vec<u8> {
+        &self.qe_auth
+    }
+
+    /// Retrieve the QE Cert Data type
+    pub fn get_qe_cert_data_type(&self) -> CertDataType {
+        self.qe_cert_data_type
+    }
+
+    /// Retrieve the QE Cert Data
+    pub fn get_qe_cert_data(&self) -> &Vec<u8> {
+        &self.qe_cert_data
+    }
 }

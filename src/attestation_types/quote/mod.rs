@@ -8,10 +8,10 @@
 pub mod quoteheader;
 pub mod sigdata;
 
-use super::report::Body;
+use super::report::{Body, ReportError};
+use core::fmt;
 use quoteheader::QuoteHeader;
 use sigdata::SigData;
-use std::fmt;
 
 /// The length of an ECDSA signature is 64 bytes. This value must be 4 bytes.
 pub const ECDSASIGLEN: u32 = 64;
@@ -27,6 +27,12 @@ impl fmt::Display for QuoteError {
 }
 
 impl std::error::Error for QuoteError {}
+
+impl From<ReportError> for QuoteError {
+    fn from(_: ReportError) -> Self {
+        QuoteError("Report error".to_string())
+    }
+}
 
 /// Wrapper struct for the u32 indicating the signature data length
 /// (described in A.4).
