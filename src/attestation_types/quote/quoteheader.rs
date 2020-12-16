@@ -90,6 +90,52 @@ impl Default for QuoteHeader {
     }
 }
 
+impl TryFrom<&[u8; 48]> for QuoteHeader {
+    type Error = QuoteError;
+
+    fn try_from(bytes: &[u8; 48]) -> Result<Self, Self::Error> {
+        let mut tmp = [0u8; 2];
+
+        tmp.copy_from_slice(&bytes[0..2]);
+        let version = u16::from_le_bytes(tmp);
+        if version != VERSION {
+            return Err(QuoteError(
+                    format!("Incorrect Quote version, expected: {}, actual: {}; cannot convert bytes to QuoteHeader", 
+                VERSION, version)));
+        }
+
+        tmp.copy_from_slice(&bytes[2..4]);
+        let att_key_type = AttestationKeyType::try_from(u16::from_le_bytes(tmp))?;
+        if att_key_type != AttestationKeyType::default() {
+            return Err(QuoteError(
+                    format!("Incorrect Quote key type, expected: {}, actual: {}; cannot convert bytes to QuoteHeader", 
+                AttestationKeyType::default() as u16, att_key_type as u16)));
+        }
+
+        tmp.copy_from_slice(&bytes[8..10]);
+        let qe_svn = u16::from_le_bytes(tmp);
+
+        tmp.copy_from_slice(&bytes[10..12]);
+        let pce_svn = u16::from_le_bytes(tmp);
+
+        let mut qe_vendor_id = [0u8; 16];
+        qe_vendor_id.copy_from_slice(&bytes[12..28]);
+
+        let mut user_data = [0u8; 20];
+        user_data.copy_from_slice(&bytes[28..48]);
+
+        Ok(Self {
+            version,
+            att_key_type,
+            qe_svn,
+            pce_svn,
+            qe_vendor_id,
+            user_data,
+            ..Default::default()
+        })
+    }
+}
+
 #[cfg(test)]
 testaso! {
     struct QuoteHeader: 4, 48 => {
