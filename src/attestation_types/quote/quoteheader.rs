@@ -48,6 +48,7 @@ impl TryFrom<u16> for AttestationKeyType {
 /// Unlike the other parts of the Quote, this structure
 /// is transparent to the user.
 /// Section A.4, Table 3
+#[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct QuoteHeader {
     /// Version of Quote structure, 3 in the ECDSA case.
