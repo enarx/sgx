@@ -110,6 +110,17 @@ impl Attributes {
     pub const fn xfrm(&self) -> Xfrm {
         self.xfrm
     }
+
+    /// Returns Attributes as a Vec<u8>
+    #[cfg(feature = "std")]
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut v = Vec::new();
+        unsafe {
+            v.extend(&self.flags.bits().to_le_bytes());
+            v.extend(&self.xfrm.bits().to_le_bytes());
+        }
+        v
+    }
 }
 
 impl core::ops::Not for Attributes {

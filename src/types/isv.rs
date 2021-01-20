@@ -23,11 +23,21 @@ impl ProdId {
     pub const fn new(prod_id: u16) -> Self {
         Self(prod_id)
     }
+
+    /// Returns inner value as u16
+    pub const fn inner(&self) -> u16 {
+        self.0
+    }
 }
 
 impl Svn {
     /// Creates a new Svn based on value provided.
     pub const fn new(svn: u16) -> Self {
         Self(svn)
+    }
+
+    /// Returns inner value as u16
+    pub const fn inner(&self) -> u16 {
+        self.0
     }
 }

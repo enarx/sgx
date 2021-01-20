@@ -126,6 +126,34 @@ impl TryFrom<&[u8; 384]> for Body {
     }
 }
 
+impl Body {
+    /// Returns a Vec<u8> representation of Body
+    #[cfg(feature = "std")]
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut vec: Vec<u8> = Vec::new();
+
+        let (_, res0, _) = unsafe { &self.reserved0[..].align_to::<u8>() };
+        let (_, res1, _) = unsafe { &self.reserved1[..].align_to::<u8>() };
+        let (_, res2, _) = unsafe { &self.reserved2[..].align_to::<u8>() };
+        let (_, res3, _) = unsafe { &self.reserved3[..].align_to::<u8>() };
+        let (_, reportdata, _) = unsafe { &self.reportdata.align_to::<u8>() };
+
+        vec.extend(&self.cpusvn);
+        vec.extend(&self.miscselect.bits().to_le_bytes());
+        vec.extend_from_slice(res0);
+        vec.extend(&self.attributes.to_vec());
+        vec.extend(&self.mrenclave);
+        vec.extend_from_slice(res1);
+        vec.extend(&self.mrsigner);
+        vec.extend_from_slice(res2);
+        vec.extend(&self.isvprodid.inner().to_le_bytes());
+        vec.extend(&self.isvsvn.inner().to_le_bytes());
+        vec.extend_from_slice(res3);
+        vec.extend_from_slice(reportdata);
+        vec
+    }
+}
+
 /// Table 38-21
 #[derive(Default, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
