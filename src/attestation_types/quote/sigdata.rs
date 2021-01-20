@@ -205,9 +205,9 @@ impl TryFrom<&[u8]> for SigData {
         let qe_cert_data_type =
             CertDataType::try_from(u16::from_le_bytes(qe_cert_data_type_bytes))?;
 
-        if qe_cert_data_type != CertDataType::PCKLeafCert {
+        if qe_cert_data_type != CertDataType::PCKCertChain {
             return Err(QuoteError(format!(
-                "Expected CertDataType::PCKLeafCert, got: {}",
+                "Expected CertDataType::PCKCertChain, got: {}",
                 qe_cert_data_type
             )));
         }
