@@ -31,6 +31,16 @@ impl From<&[u8; 64]> for ECDSAP256Sig {
     }
 }
 
+impl ECDSAP256Sig {
+    /// Returns Vec<u8> of r component followed by s component
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut vec: Vec<u8> = Vec::new();
+        vec.extend(&self.r);
+        vec.extend(&self.s);
+        vec
+    }
+}
+
 /// EC KT-I Public Key, the x-coordinate followed by
 /// the y-coordinate (on the RFC 6090P-256 curve),
 /// 2 x 32 bytes.
@@ -54,6 +64,16 @@ impl From<&[u8; 64]> for ECDSAPubKey {
         y.copy_from_slice(&bytes[32..64]);
 
         Self { x, y }
+    }
+}
+
+impl ECDSAPubKey {
+    /// Returns a Vec<u8> of the x coordinate followed by the y coordinate
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut vec: Vec<u8> = Vec::new();
+        vec.extend(&self.x);
+        vec.extend(&self.y);
+        vec
     }
 }
 
