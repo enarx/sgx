@@ -8,3 +8,5 @@
 pub mod quote;
 pub mod report;
 pub mod ti;
+#[cfg(feature = "crypto")]
+pub mod verify;
