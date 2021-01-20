@@ -237,33 +237,35 @@ impl TryFrom<&[u8]> for SigData {
 
 impl SigData {
     /// Retrieve Report Signature
-    pub fn get_report_sig(&self) -> ECDSAP256Sig {
-        self.isv_enclave_report_sig
+    pub fn report_sig(&self) -> &ECDSAP256Sig {
+        &self.isv_enclave_report_sig
     }
 
     /// Retrieve Attestation Key used to sign Report
-    pub fn get_attkey(&self) -> ECDSAPubKey {
-        self.ecdsa_attestation_key
+    pub fn attkey(&self) -> &ECDSAPubKey {
+        &self.ecdsa_attestation_key
     }
 
     /// Retrieve QE Report of the QE that signed the Report
-    pub fn get_qe_report(&self) -> Body {
-        self.qe_report
+    pub fn qe_report(&self) -> &Body {
+        &self.qe_report
     }
 
     /// Retrieve the QE Report Signature
-    pub fn get_qe_report_sig(&self) -> ECDSAP256Sig {
-        self.qe_report_sig
+    pub fn qe_report_sig(&self) -> &ECDSAP256Sig {
+        &self.qe_report_sig
     }
 
     /// Retrieve the QE Auth
-    pub fn get_qe_auth(&self) -> &Vec<u8> {
-        &self.qe_auth
+    pub fn qe_auth(&self) -> Vec<u8> {
+        let mut v = Vec::new();
+        v.extend(&self.qe_auth);
+        v
     }
 
     /// Retrieve the QE Cert Data type
-    pub fn get_qe_cert_data_type(&self) -> CertDataType {
-        self.qe_cert_data_type
+    pub fn qe_cert_data_type(&self) -> &CertDataType {
+        &self.qe_cert_data_type
     }
 
     /// Retrieve the QE Cert Data length
@@ -272,7 +274,7 @@ impl SigData {
     }
 
     /// Retrieve the QE Cert Data
-    pub fn get_qe_cert_data(&self) -> &Vec<u8> {
-        &self.qe_cert_data
+    pub fn qe_cert_data_vec(&self) -> Vec<u8> {
+        self.qe_cert_data.clone()
     }
 }
