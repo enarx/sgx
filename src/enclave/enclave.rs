@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+use std::fmt;
 use std::sync::{Arc, RwLock};
-use std::{fmt, mem::MaybeUninit};
 
 use mmarinus::{perms, Map};
 use primordial::Register;
@@ -37,7 +37,6 @@ impl<T: Copy + fmt::LowerHex> fmt::Debug for Address<T> {
 /// numbers, which are u8. Therefore, we don't use ExceptionInfo::unused.
 ///
 /// TODO add more comprehensive docs
-#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ExceptionInfo {
     /// Last entry type
@@ -46,15 +45,11 @@ pub struct ExceptionInfo {
     /// Exception error code
     pub trap: Exception,
 
-    unused: u8,
-
     /// Trapping code
     pub code: u16,
 
     /// Memory address where exception occurred
     pub addr: Address<u64>,
-
-    reserved: [u64; 2],
 }
 
 impl fmt::Debug for ExceptionInfo {
@@ -86,11 +81,69 @@ impl Enclave {
     }
 }
 
+/// The registers that can be passed to/from the enclave
+#[repr(C)]
+#[derive(Default, Debug)]
+#[allow(missing_docs)]
+pub struct Registers {
+    pub rdi: Register<usize>,
+    pub rsi: Register<usize>,
+    pub rdx: Register<usize>,
+    pub r8: Register<usize>,
+    pub r9: Register<usize>,
+}
+
+// This structure is dictated by the Linux kernel.
+//
+// See: https://github.com/torvalds/linux/blob/84292fffc2468125632a21c09533a89426ea212e/arch/x86/include/uapi/asm/sgx.h#L112
+#[repr(C)]
+#[derive(Default, Debug)]
+struct Run {
+    tcs: Register<u64>,
+    function: u32,
+    exception_vector: u16,
+    exception_error_code: u16,
+    exception_addr: Register<u64>,
+    user_handler: Register<u64>,
+    user_data: Register<u64>,
+    reserved: [u64; 27],
+}
+
+// This function signature is dictated by the Linux kernel.
+//
+// See: https://github.com/torvalds/linux/blob/84292fffc2468125632a21c09533a89426ea212e/arch/x86/include/uapi/asm/sgx.h#L92
+extern "C" fn handler(
+    rdi: Register<usize>,
+    rsi: Register<usize>,
+    rdx: Register<usize>,
+    _rsp: Register<usize>,
+    r8: Register<usize>,
+    r9: Register<usize>,
+    run: &mut Run,
+) -> libc::c_int {
+    let registers: *mut Registers = run.user_data.into();
+    let registers: &mut Registers = unsafe { &mut *registers };
+    registers.rdi = rdi.into();
+    registers.rsi = rsi.into();
+    registers.rdx = rdx.into();
+    registers.r8 = r8.into();
+    registers.r9 = r9.into();
+    0
+}
+
 /// A single thread of execution inside an enclave.
 pub struct Thread {
     enc: Arc<RwLock<Enclave>>,
     tcs: *mut Tcs,
-    fnc: &'static vdso::Symbol,
+    fnc: unsafe extern "C" fn(
+        rdi: Register<usize>,
+        rsi: Register<usize>,
+        rdx: Register<usize>,
+        leaf: Entry,
+        r8: Register<usize>,
+        r9: Register<usize>,
+        run: &mut Run,
+    ) -> libc::c_int,
 }
 
 impl Drop for Thread {
@@ -108,6 +161,7 @@ impl Thread {
             .expect("vDSO not found")
             .lookup("__vdso_sgx_enter_enclave")
             .expect("__vdso_sgx_enter_enclave not found");
+        let fnc = unsafe { core::mem::transmute(fnc) };
 
         Some(Self { enc, tcs, fnc })
     }
@@ -115,23 +169,18 @@ impl Thread {
     /// Enter an enclave.
     ///
     /// This function enters an enclave using `Entry` and provides the
-    /// specified argument to the enclave in the `rdx` register. On success,
-    /// the value of the `rdx` register at enclave exit is returned. There
-    /// are two failure cases. If the enclave performs an asynchronous exit
-    /// (AEX), the details of the exception are returned. Otherwise, an
-    /// unknown error has occurred.
+    /// specified `registers` to the enclave. On success, the `registers`
+    /// variable contains the registers returned from the enclave. Otherwise,
+    /// an asynchronous exit (AEX) has occurred and the details about the
+    /// exception are returned.
     #[inline(always)]
-    pub fn enter(
-        &self,
-        how: Entry,
-        arg: impl Into<Register<usize>>,
-    ) -> Result<Register<usize>, Option<ExceptionInfo>> {
-        const FAULT: i32 = -libc::EFAULT;
-        const EEXIT: i32 = 0;
-
-        let mut exc = MaybeUninit::<ExceptionInfo>::uninit();
-        let mut rdx: usize = arg.into().into();
-        let rax: i32;
+    pub fn enter(&mut self, how: Entry, registers: &mut Registers) -> Result<(), ExceptionInfo> {
+        let mut run = Run {
+            tcs: self.tcs.into(),
+            user_handler: (handler as usize).into(),
+            user_data: registers.into(),
+            ..Default::default()
+        };
 
         // The `enclu` instruction consumes `rax`, `rbx` and `rcx`. However,
         // the vDSO function preserves `rbx` AND sets `rax` as the return
@@ -141,6 +190,7 @@ impl Thread {
         // Therefore, we use `rdx` to pass a single argument into and out from
         // the enclave. We consider all other registers to be clobbered by the
         // enclave itself.
+        let rax: i32;
         unsafe {
             asm!(
                 "push rbp",       // save rbp
@@ -148,37 +198,40 @@ impl Thread {
                 "and  rsp, ~0xf", // align to 16+0
 
                 "push 0",         // align to 16+8
-                "push 0",         // push exit handler arg
-                "push {}",        // push exception info arg
-                "push {}",        // push tcs page address arg
-                "call {}",        // call vDSO function
+                "push r10",       // push run address
+                "call r11",       // call vDSO function
 
                 "mov  rsp, rbp",  // restore rsp
                 "pop  rbp",       // restore rbp
 
-                in(reg) exc.as_mut_ptr(),
-                in(reg) self.tcs,
-                in(reg) self.fnc,
-                inout("rdx") rdx,
+                inout("rdi") usize::from(registers.rdi) => _,
+                inout("rsi") usize::from(registers.rsi) => _,
+                inout("rdx") usize::from(registers.rdx) => _,
                 inout("rcx") how as u32 => _,
-                lateout("rax") rax,
-                lateout("rdi") _,
-                lateout("rsi") _,
-                lateout("r8") _,
-                lateout("r9") _,
-                lateout("r10") _,
-                lateout("r11") _,
+                inout("r8") usize::from(registers.r8) => _,
+                inout("r9") usize::from(registers.r9) => _,
+                inout("r10") &mut run => _,
+                inout("r11") self.fnc => _,
+                lateout("rbx") _,
                 lateout("r12") _,
                 lateout("r13") _,
                 lateout("r14") _,
                 lateout("r15") _,
+                lateout("rax") rax,
             );
         }
 
-        match rax {
-            EEXIT => Ok(rdx.into()),
-            FAULT => Err(Some(unsafe { exc.assume_init() })),
-            _ => Err(None),
+        match (rax, run.function) {
+            (0, 4) => return Ok(()),
+            (0, 2) | (0, 3) => (),
+            _ => unreachable!(),
         }
+
+        Err(ExceptionInfo {
+            trap: unsafe { core::mem::transmute(run.exception_vector as u8) },
+            code: run.exception_error_code,
+            addr: Address(run.exception_addr.into()),
+            last: unsafe { core::mem::transmute(run.function) },
+        })
     }
 }
