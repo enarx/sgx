@@ -23,7 +23,7 @@ pub struct TargetInfo {
 
 #[repr(C, align(128))]
 /// Pass information from the source enclave to the target enclave
-pub struct ReportData(pub [u8; 64]);
+pub struct ReportData(pub [u16; 32]);
 
 #[cfg(feature = "asm")]
 impl TargetInfo {
