@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// A sample MRENCLAVE expected by testing
+#[allow(dead_code)]
+pub const SAMPLE_MRENCLAVE: [u8; 32] = [
+    180, 191, 170, 163, 153, 166, 115, 141, 209, 114, 31, 4, 206, 27, 234, 34, 70, 79, 197, 202,
+    28, 196, 124, 128, 26, 92, 175, 41, 184, 83, 61, 42,
+];
+
 /// A sample Quote to test verification
 #[allow(dead_code)]
 pub const SAMPLE_V3QUOTE: [u8; 4598] = [

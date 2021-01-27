@@ -9,6 +9,7 @@ mod samples;
 mod sig;
 
 use super::quote::Quote;
+use error::VerifyError;
 use key::Key;
 use sig::Signature;
 
@@ -55,7 +56,11 @@ pub fn get_intel_cert_chain_pem() -> Result<String, Box<dyn Error>> {
 
 /// Verify a quote against a trusted certificate chain
 #[allow(dead_code)]
-pub fn verify(quote_bytes: &[u8], trusted_public_pck_chain: &str) -> Result<(), Box<dyn Error>> {
+pub fn verify(
+    quote_bytes: &[u8],
+    trusted_public_pck_chain: &str,
+    good_measurement: &[u8],
+) -> Result<(), Box<dyn Error>> {
     // The material (Quote Header || ISV Enclave Report) signed by Quoting Enclave's Attestation Key
     // is retrieved.
     let att_key_signed_material = Quote::raw_header_and_body(quote_bytes)?;
@@ -65,6 +70,7 @@ pub fn verify(quote_bytes: &[u8], trusted_public_pck_chain: &str) -> Result<(), 
 
     // Parse the Quote's signature section.
     let quote = Quote::try_from(quote_bytes)?;
+    let report = quote.body();
     let q_sig = quote.sigdata();
     let q_enclave_report_sig = q_sig.report_sig();
     let q_att_key_pub = q_sig.attkey();
@@ -108,6 +114,14 @@ pub fn verify(quote_bytes: &[u8], trusted_public_pck_chain: &str) -> Result<(), 
         .borrow()
         .verify_hash(hashed_reportdata, unhashed_data)?;
 
+    // This verifies that MRENCLAVE from the Report matches the known-good measurement
+    if &report.mrenclave[..] != good_measurement {
+        return Err(Box::new(VerifyError(format!(
+            "mrenclave: {:?} did not match known good value: {:?}",
+            report.mrenclave, good_measurement
+        ))));
+    }
+
     Ok(())
 }
 
@@ -115,7 +129,7 @@ pub fn verify(quote_bytes: &[u8], trusted_public_pck_chain: &str) -> Result<(), 
 mod test {
     use super::*;
 
-    use samples::SAMPLE_V3QUOTE;
+    use samples::{SAMPLE_MRENCLAVE, SAMPLE_V3QUOTE};
 
     #[cfg(not(feature = "chain_get"))]
     use samples::SAMPLE_INTEL_CERT_CHAIN;
@@ -128,22 +142,37 @@ mod test {
         #[cfg(not(feature = "chain_get"))]
         let cert_chain = SAMPLE_INTEL_CERT_CHAIN;
 
-        assert!(verify(&SAMPLE_V3QUOTE[..], &cert_chain).is_ok());
+        assert!(verify(&SAMPLE_V3QUOTE[..], &cert_chain, &SAMPLE_MRENCLAVE[..]).is_ok());
     }
 
     #[test]
     fn verify_fail_bad_pck_chain() {
-        assert!(verify(&SAMPLE_V3QUOTE[..], &samples::BAD_PCK_CHAIN).is_err());
+        assert!(verify(
+            &SAMPLE_V3QUOTE[..],
+            &samples::BAD_PCK_CHAIN,
+            &SAMPLE_MRENCLAVE[..]
+        )
+        .is_err());
     }
 
     #[test]
     fn verify_fail_backwards_pck_chain() {
-        assert!(verify(&SAMPLE_V3QUOTE[..], &samples::BACKWARDS_PCK_CHAIN).is_err());
+        assert!(verify(
+            &SAMPLE_V3QUOTE[..],
+            &samples::BACKWARDS_PCK_CHAIN,
+            &SAMPLE_MRENCLAVE[..]
+        )
+        .is_err());
     }
 
     #[test]
     fn verify_fail_incomplete_pck_chain() {
-        assert!(verify(&SAMPLE_V3QUOTE[..], &samples::INCOMPLETE_PCK_CHAIN).is_err());
+        assert!(verify(
+            &SAMPLE_V3QUOTE[..],
+            &samples::INCOMPLETE_PCK_CHAIN,
+            &SAMPLE_MRENCLAVE[..]
+        )
+        .is_err());
     }
 
     #[test]
@@ -158,7 +187,7 @@ mod test {
         let bad_ak = &[0u8; 64];
         let _ = quote.splice(500..564, bad_ak.iter().cloned());
 
-        assert!(verify(&quote, &cert_chain).is_err());
+        assert!(verify(&quote, &cert_chain, &SAMPLE_MRENCLAVE[..]).is_err());
     }
 
     #[test]
@@ -173,7 +202,7 @@ mod test {
         let bad_report_sig = &[0u8; 64];
         let _ = quote.splice(436..500, bad_report_sig.iter().cloned());
 
-        assert!(verify(&quote[..], &cert_chain).is_err());
+        assert!(verify(&quote[..], &cert_chain, &SAMPLE_MRENCLAVE[..]).is_err());
     }
 
     #[test]
@@ -188,7 +217,7 @@ mod test {
         let bad_qe_report_sig = &[0u8; 64];
         let _ = quote.splice(948..1012, bad_qe_report_sig.iter().cloned());
 
-        assert!(verify(&quote[..], &cert_chain).is_err());
+        assert!(verify(&quote[..], &cert_chain, &SAMPLE_MRENCLAVE[..]).is_err());
     }
 
     #[test]
@@ -203,6 +232,17 @@ mod test {
         let bad_hashed_material = &[0u8; 32];
         let _ = quote.splice(884..916, bad_hashed_material.iter().cloned());
 
-        assert!(verify(&quote[..], &cert_chain).is_err());
+        assert!(verify(&quote[..], &cert_chain, &SAMPLE_MRENCLAVE[..]).is_err());
+    }
+
+    #[test]
+    fn verify_fail_bad_measurement() {
+        #[cfg(feature = "chain_get")]
+        let cert_chain = get_intel_cert_chain_pem().unwrap();
+
+        #[cfg(not(feature = "chain_get"))]
+        let cert_chain = SAMPLE_INTEL_CERT_CHAIN;
+
+        assert!(verify(&SAMPLE_V3QUOTE[..], &cert_chain, &[0u8; 32]).is_err());
     }
 }
