@@ -54,13 +54,14 @@ pub fn get_intel_cert_chain_pem() -> Result<String, Box<dyn Error>> {
     Ok(trusted_public_pck_chain.to_string())
 }
 
-/// Verify a quote against a trusted certificate chain
+/// Verify a quote against a trusted certificate chain and known good measurement. If successful,
+/// it will return the Report's ReportData field as bytes.
 #[allow(dead_code)]
 pub fn verify(
     quote_bytes: &[u8],
     trusted_public_pck_chain: &str,
     good_measurement: &[u8],
-) -> Result<(), Box<dyn Error>> {
+) -> Result<[u8; 64], Box<dyn Error>> {
     // The material (Quote Header || ISV Enclave Report) signed by Quoting Enclave's Attestation Key
     // is retrieved.
     let att_key_signed_material = Quote::raw_header_and_body(quote_bytes)?;
@@ -122,7 +123,10 @@ pub fn verify(
         ))));
     }
 
-    Ok(())
+    // Return ReportData as bytes
+    let mut reportdata = [0u8; 64];
+    reportdata.copy_from_slice(&report.reportdata[..]);
+    Ok(reportdata)
 }
 
 #[cfg(test)]
