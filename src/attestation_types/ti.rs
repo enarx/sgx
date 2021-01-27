@@ -5,6 +5,7 @@
 //! verify the REPORT structure returned by the EREPORT leaf. Must be 512-byte aligned.
 
 use crate::types::{attr::Attributes, misc::MiscSelect};
+use core::default::Default;
 
 /// Table 38-22
 #[derive(Default, Debug, Clone, Copy)]
@@ -21,9 +22,16 @@ pub struct TargetInfo {
     reserved2: [u64; 25],
 }
 
+#[derive(Clone, Copy)]
 #[repr(C, align(128))]
 /// Pass information from the source enclave to the target enclave
 pub struct ReportData(pub [u8; 64]);
+
+impl Default for ReportData {
+    fn default() -> Self {
+        ReportData([0u8; 64])
+    }
+}
 
 #[cfg(feature = "asm")]
 impl TargetInfo {

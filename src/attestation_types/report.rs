@@ -3,16 +3,24 @@
 //! Section 38.15
 //! The REPORT structure is the output of the EREPORT instruction, and must be 512-Byte aligned.
 
+#![allow(missing_docs)]
+
 use crate::types::{
     attr::{Attributes, Flags, Xfrm},
     isv,
     misc::MiscSelect,
 };
 
-#[cfg(feature = "serde")]
+use core::{convert::TryFrom, default::Default};
+
+#[cfg(feature = "serialize")]
 use serde::{Deserialize, Serialize};
 
-use core::convert::TryFrom;
+#[cfg(feature = "serialize")]
+use serde_big_array::big_array;
+
+#[cfg(feature = "serialize")]
+big_array! { BigArray; }
 
 #[derive(Debug, Clone)]
 /// Error type for Report module
@@ -20,8 +28,8 @@ pub struct ReportError;
 
 /// This struct is separated out from the Report to be usable by the Quote struct.
 /// Table 38-21
-#[derive(Clone, Copy, Default, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[repr(C)]
 pub struct Body {
     /// The security version number of the processor
@@ -59,7 +67,27 @@ pub struct Body {
     reserved3: [u32; 15],
 
     /// Data provided by the user and protected by the Report's MAC (Section 38.15.1)
-    pub reportdata: [u16; 32],
+    #[cfg_attr(feature = "serialize", serde(with = "BigArray"))]
+    pub reportdata: [u8; 64],
+}
+
+impl Default for Body {
+    fn default() -> Self {
+        Body {
+            cpusvn: <[u8; 16]>::default(),
+            miscselect: MiscSelect::default(),
+            reserved0: <[u32; 7]>::default(),
+            attributes: Attributes::default(),
+            mrenclave: <[u8; 32]>::default(),
+            reserved1: <[u32; 8]>::default(),
+            mrsigner: <[u8; 32]>::default(),
+            reserved2: <[u32; 24]>::default(),
+            isvprodid: isv::ProdId::default(),
+            isvsvn: isv::Svn::default(),
+            reserved3: <[u32; 15]>::default(),
+            reportdata: [0u8; 64],
+        }
+    }
 }
 
 impl TryFrom<&[u8; 384]> for Body {
@@ -108,9 +136,8 @@ impl TryFrom<&[u8; 384]> for Body {
         svn.copy_from_slice(&bytes[258..260]);
         let isvsvn = isv::Svn::new(u16::from_le_bytes(svn));
 
-        let mut reportdata = [0u16; 32];
-        let (_, rd, _) = unsafe { &bytes[320..384].align_to::<u16>() };
-        reportdata.copy_from_slice(rd);
+        let mut reportdata = [0u8; 64];
+        reportdata.copy_from_slice(&bytes[320..384]);
 
         Ok(Self {
             cpusvn,
@@ -155,8 +182,8 @@ impl Body {
 }
 
 /// Table 38-21
-#[derive(Default, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Default)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[repr(C, align(512))]
 pub struct Report {
     /// The body of the Report
