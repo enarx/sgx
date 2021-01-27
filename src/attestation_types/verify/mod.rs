@@ -5,8 +5,10 @@
 mod cert_chain;
 mod error;
 mod key;
-mod samples;
 mod sig;
+
+#[cfg(test)]
+mod samples;
 
 use super::quote::Quote;
 use key::Key;
