@@ -26,9 +26,11 @@ crypto = ["std", "openssl" ]
 chain_get = [ "std", "percent-encoding", "reqwest"]
 std = ["iocuddle", "libc", "mmarinus", "vdso"]
 asm = ["xsave/asm"]
+serialize = [ "serde", "serde-big-array" ]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"], optional = true }
+serde-big-array = { version = "0.3.1", optional = true }
 xsave = { version = "0.1.1", default-features = false }
 iocuddle = { version = "0.1", optional = true }
 mmarinus = { version = "0.2", optional = true }
