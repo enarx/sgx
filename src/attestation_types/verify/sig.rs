@@ -61,7 +61,7 @@ impl TryFrom<&Signature> for EcdsaSig {
     fn try_from(value: &Signature) -> Result<Self, Self::Error> {
         let r = BigNum::from_slice(&value.r)?;
         let s = BigNum::from_slice(&value.s)?;
-        Ok(EcdsaSig::from_private_components(r, s)?)
+        EcdsaSig::from_private_components(r, s)
     }
 }
 
@@ -69,7 +69,7 @@ impl TryFrom<&Signature> for EcdsaSig {
 impl TryFrom<&Signature> for Vec<u8> {
     type Error = ErrorStack;
     fn try_from(value: &Signature) -> Result<Self, Self::Error> {
-        Ok(EcdsaSig::try_from(value)?.to_der()?)
+        EcdsaSig::try_from(value)?.to_der()
     }
 }
 
