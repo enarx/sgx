@@ -182,4 +182,10 @@ impl Builder {
 
         Ok(Arc::new(RwLock::new(Enclave::new(self.mmap, self.tcsp))))
     }
+
+    /// Return the Hasher struct. This can be used to get the enclave's
+    /// measurement without running the enclave.
+    pub fn hasher(&self) -> Hasher {
+        self.hash.clone()
+    }
 }
