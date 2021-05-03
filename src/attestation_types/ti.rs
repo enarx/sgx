@@ -50,10 +50,12 @@ impl TargetInfo {
         let mut report = core::mem::MaybeUninit::<report::Report>::uninit();
 
         asm!(
+            "xchg {RBX}, rbx",
             "enclu",
+            "mov rbx, {RBX}",
 
+            RBX = inout(reg) self => _,
             in("rax") EREPORT,
-            in("rbx") self,
             in("rcx") data.0.as_ptr(),
             in("rdx") report.as_mut_ptr(),
         );
