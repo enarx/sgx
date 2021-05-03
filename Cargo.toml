@@ -44,7 +44,7 @@ bitflags = "1.2"
 lset = "0.1"
 
 [dev-dependencies]
-rstest = "0.6"
+rstest = "0.9"
 memoffset = "0.6.1"
 
 [build-dependencies]
