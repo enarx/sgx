@@ -193,6 +193,7 @@ impl Thread {
         let rax: i32;
         unsafe {
             asm!(
+                "push rbx",       // save rbx
                 "push rbp",       // save rbp
                 "mov  rbp, rsp",  // save rsp
                 "and  rsp, ~0xf", // align to 16+0
@@ -203,6 +204,7 @@ impl Thread {
 
                 "mov  rsp, rbp",  // restore rsp
                 "pop  rbp",       // restore rbp
+                "pop  rbx",       // restore rbx
 
                 inout("rdi") usize::from(registers.rdi) => _,
                 inout("rsi") usize::from(registers.rsi) => _,
@@ -212,7 +214,6 @@ impl Thread {
                 inout("r9") usize::from(registers.r9) => _,
                 inout("r10") &mut run => _,
                 inout("r11") self.fnc => _,
-                lateout("rbx") _,
                 lateout("r12") _,
                 lateout("r13") _,
                 lateout("r14") _,
