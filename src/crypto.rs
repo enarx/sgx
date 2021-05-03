@@ -19,6 +19,7 @@ use std::num::NonZeroU32;
 /// summarized at https://github.com/enarx/enarx/wiki/SGX-Measurement. The leaf
 /// functions are mimicked to obtain these values, but are not actually called here;
 /// to use them, refer to the [iocuddle-sgx](../../iocuddle-sgx) library.
+#[derive(Clone)]
 pub struct Hasher(sha::Sha256);
 
 impl Hasher {
