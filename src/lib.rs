@@ -19,7 +19,6 @@
 ///     }
 /// }
 #[cfg(test)]
-#[macro_use]
 macro_rules! testaso {
     (@off $name:path=>$field:ident) => {
         memoffset::offset_of!($name, $field)
