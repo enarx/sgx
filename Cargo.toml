@@ -41,6 +41,7 @@ libc = { version = "0.2", optional = true }
 vdso = { version = "0.1", optional = true }
 primordial = "0.1"
 bitflags = "1.2"
+flagset = "0.4"
 lset = "0.1"
 
 [dev-dependencies]
