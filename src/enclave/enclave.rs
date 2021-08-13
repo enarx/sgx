@@ -123,11 +123,11 @@ extern "C" fn handler(
 ) -> libc::c_int {
     let registers: *mut Registers = run.user_data.into();
     let registers: &mut Registers = unsafe { &mut *registers };
-    registers.rdi = rdi.into();
-    registers.rsi = rsi.into();
-    registers.rdx = rdx.into();
-    registers.r8 = r8.into();
-    registers.r9 = r9.into();
+    registers.rdi = rdi;
+    registers.rsi = rsi;
+    registers.rdx = rdx;
+    registers.r8 = r8;
+    registers.r9 = r9;
     0
 }
 
