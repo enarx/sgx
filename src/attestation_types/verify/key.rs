@@ -52,7 +52,7 @@ impl Key {
     pub fn new_from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn Error>> {
         let mut ctx = openssl::bn::BigNumContext::new()?;
         let curve = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1)?;
-        let pub_ecpoint = openssl::ec::EcPoint::from_bytes(curve.as_ref(), &bytes, &mut *ctx)?;
+        let pub_ecpoint = openssl::ec::EcPoint::from_bytes(curve.as_ref(), bytes, &mut *ctx)?;
         let pub_eckey = openssl::ec::EcKey::from_public_key(curve.as_ref(), pub_ecpoint.as_ref())?;
         let pub_pkey = openssl::pkey::PKey::from_ec_key(pub_eckey)?;
 
