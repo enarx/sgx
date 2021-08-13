@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::{enclave::Enclave, ioctls};
-use crate::{
-    crypto::Hasher,
-    types::{
-        page::{Class, Flags, SecInfo},
-        tcs::Tcs,
-        {secs::*, sig::*, ssa::StateSaveArea},
-    },
-};
+use crate::crypto::Hasher;
+use crate::loader::{Flags, Loader};
+use crate::types::page::{self, Class, SecInfo};
+use crate::types::tcs::Tcs;
+use crate::types::{secs::*, sig::*, ssa::StateSaveArea};
 
 use lset::Span;
 use mmarinus::{perms, Kind, Map};
@@ -30,17 +27,17 @@ pub struct Segment {
     pub si: SecInfo,
 }
 
-fn f2p(flags: Flags) -> libc::c_int {
+fn f2p(flags: page::Flags) -> libc::c_int {
     let mut prot = libc::PROT_NONE;
-    if flags.contains(Flags::R) {
+    if flags.contains(page::Flags::R) {
         prot |= libc::PROT_READ;
     }
 
-    if flags.contains(Flags::W) {
+    if flags.contains(page::Flags::W) {
         prot |= libc::PROT_WRITE;
     }
 
-    if flags.contains(Flags::X) {
+    if flags.contains(page::Flags::X) {
         prot |= libc::PROT_EXEC;
     }
 
@@ -104,8 +101,6 @@ impl Builder {
     ///
     /// TODO add more comprehensive docs.
     pub fn load(&mut self, segs: &[Segment]) -> Result<()> {
-        const FLAGS: ioctls::Flags = ioctls::Flags::MEASURE;
-
         for seg in segs {
             // Ignore segments with no pages.
             if seg.src.is_empty() {
@@ -115,11 +110,13 @@ impl Builder {
             let off = seg.dst - self.mmap.addr();
 
             // Update the enclave.
-            let mut ap = ioctls::AddPages::new(&seg.src, off, &seg.si, FLAGS);
+            let mut ap = ioctls::AddPages::new(&seg.src, off, &seg.si, Flags::Measure);
             ioctls::ENCLAVE_ADD_PAGES.ioctl(&mut self.file, &mut ap)?;
 
             // Update the hash.
-            self.hash.add(&seg.src, off, seg.si, true);
+            self.hash
+                .load(&seg.src, off / Page::size(), seg.si, Flags::Measure)
+                .unwrap();
 
             // Save permissions fixups for later.
             self.perm.push((
@@ -130,7 +127,7 @@ impl Builder {
                 seg.si,
             ));
 
-            if seg.si.class == Class::Tcs {
+            if seg.si.class == page::Class::Tcs {
                 for i in 0..seg.src.len() {
                     let addr = seg.dst + i * Page::size();
                     self.tcsp.push(addr as _);
