@@ -7,7 +7,9 @@
 #![cfg(feature = "crypto")]
 #![allow(clippy::unreadable_literal)]
 
+use crate::loader::{Flags, Loader};
 use crate::types::{page::SecInfo, sig};
+
 use openssl::sha;
 use primordial::Page;
 
@@ -38,16 +40,34 @@ impl Hasher {
         Self(sha256)
     }
 
-    /// Mimics call to SGX_IOC_ENCLAVE_ADD_PAGES (EADD and EEXTEND).
-    pub fn add(&mut self, pages: &[Page], offset: usize, secinfo: SecInfo, measure: bool) {
+    /// Produces MRENCLAVE value by hashing with SHA256.
+    pub fn finish(self, params: impl Into<Option<sig::Parameters>>) -> sig::Measurement {
+        params
+            .into()
+            .unwrap_or_default()
+            .measurement(self.0.finish())
+    }
+}
+
+impl Loader for Hasher {
+    type Error = std::convert::Infallible;
+
+    fn load(
+        &mut self,
+        pages: impl AsRef<[Page]>,
+        offset: usize,
+        secinfo: SecInfo,
+        flags: impl Into<flagset::FlagSet<crate::loader::Flags>>,
+    ) -> Result<(), Self::Error> {
         // These values documented in 41.3.
         const EEXTEND: u64 = 0x00444E4554584545;
         const EADD: u64 = 0x0000000044444145;
 
-        assert_eq!(offset % Page::size(), 0);
+        let offset = offset * Page::size();
+        let flags = flags.into();
 
         // For each page in the input...
-        for (i, page) in pages.iter().enumerate() {
+        for (i, page) in pages.as_ref().iter().enumerate() {
             let off = offset + i * Page::size();
 
             // Hash for the EADD instruction.
@@ -58,7 +78,7 @@ impl Hasher {
             });
 
             // Hash for the EEXTEND instruction.
-            if measure {
+            if flags.contains(Flags::Measure) {
                 for (j, segment) in page.as_ref().chunks(256).enumerate() {
                     let off = off + j * 256;
 
@@ -69,14 +89,8 @@ impl Hasher {
                 }
             }
         }
-    }
 
-    /// Produces MRENCLAVE value by hashing with SHA256.
-    pub fn finish(self, params: impl Into<Option<sig::Parameters>>) -> sig::Measurement {
-        params
-            .into()
-            .unwrap_or_default()
-            .measurement(self.0.finish())
+        Ok(())
     }
 }
 
@@ -112,8 +126,8 @@ pub(crate) mod test {
 
         let mut off = 0;
         for i in input {
-            hasher.add(i.0, off, i.1, true);
-            off += i.0.len() * Page::size();
+            hasher.load(i.0, off, i.1, Flags::Measure).unwrap();
+            off += i.0.len();
         }
 
         // Use default signature parameters

@@ -8,8 +8,10 @@
 
 use std::marker::PhantomData;
 
+use crate::loader::Flags;
 use crate::types::{page::SecInfo, secs, sig};
-use bitflags::bitflags;
+
+use flagset::FlagSet;
 use iocuddle::*;
 use primordial::Page;
 
@@ -25,14 +27,6 @@ pub const ENCLAVE_ADD_PAGES: Ioctl<WriteRead, &AddPages> = unsafe { SGX.write_re
 pub const ENCLAVE_INIT: Ioctl<Write, &Init> = unsafe { SGX.write(0x02) };
 
 //pub const ENCLAVE_SET_ATTRIBUTE: Ioctl<Write, &SetAttribute> = unsafe { SGX.write(0x03) };
-
-bitflags! {
-    /// WIP
-    pub struct Flags: u64 {
-        /// Indicates whether a page has been measured.
-        const MEASURE = 1 << 0;
-    }
-}
 
 #[repr(C)]
 #[derive(Debug)]
@@ -54,22 +48,36 @@ pub struct AddPages<'a> {
     offset: u64,
     length: u64,
     secinfo: u64,
-    flags: Flags,
+    flags: u64,
     count: u64,
     phantom: PhantomData<&'a ()>,
 }
 
 impl<'a> AddPages<'a> {
     /// Creates a new AddPages struct for a page at a certain offset
-    pub fn new(data: &'a [Page], offset: usize, secinfo: &'a SecInfo, flags: Flags) -> Self {
+    pub fn new(
+        data: &'a [Page],
+        offset: usize,
+        secinfo: &'a SecInfo,
+        flags: impl Into<FlagSet<Flags>>,
+    ) -> Self {
+        const MEASURE: u64 = 1 << 0;
+
         let data = unsafe { data.align_to::<u8>().1 };
+        let mut nflags = 0;
+
+        for flag in flags.into() {
+            nflags |= match flag {
+                Flags::Measure => MEASURE,
+            };
+        }
 
         Self {
             src: data.as_ptr() as _,
             offset: offset as _,
             length: data.len() as _,
             secinfo: secinfo as *const _ as _,
-            flags,
+            flags: nflags,
             count: 0,
             phantom: PhantomData,
         }
@@ -115,10 +123,11 @@ mod test {
     use std::fs::File;
     use std::num::NonZeroU32;
 
-    use crate::{
-        crypto::Hasher,
-        types::{page::Flags as Perms, secs},
-    };
+    use crate::crypto::Hasher;
+    use crate::loader::Loader;
+    use crate::types::{page::Flags as Perms, secs};
+
+    use flagset::FlagSet;
     use lset::Span;
     use openssl::{bn, pkey, rsa};
     use rstest::*;
@@ -136,7 +145,7 @@ mod test {
 
     #[cfg_attr(not(has_sgx), ignore)]
     #[rstest(
-        flags => [Flags::empty(), Flags::MEASURE],
+        flags => [None, Flags::Measure],
         perms => [
             Perms::empty(),
             Perms::R,
@@ -145,11 +154,16 @@ mod test {
             Perms::R | Perms::W | Perms::X,
         ],
     )]
-    fn test(mut file: File, key: rsa::Rsa<pkey::Private>, flags: Flags, perms: Perms) {
+    fn test(
+        mut file: File,
+        key: rsa::Rsa<pkey::Private>,
+        flags: impl Copy + Into<FlagSet<Flags>>,
+        perms: Perms,
+    ) {
         const SSA_PAGES: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(1) };
         const BASE_ADDR: usize = 0x0000;
-        const TCS_OFFSET: usize = 0x0000;
-        const REG_OFFSET: usize = 0x1000;
+        const TCS_OFFSET: usize = 0;
+        const REG_OFFSET: usize = 1;
 
         let page = [Page::default()];
         let span = Span {
@@ -158,7 +172,6 @@ mod test {
         };
 
         // Create the hasher.
-        let measure = flags.contains(Flags::MEASURE);
         let mut hasher = Hasher::new(span.count, SSA_PAGES);
 
         // Create the enclave.
@@ -168,15 +181,19 @@ mod test {
 
         // Add a TCS page
         let si = SecInfo::tcs();
-        let mut ap = AddPages::new(&page, TCS_OFFSET, &si, flags);
+        let mut ap = AddPages::new(&page, TCS_OFFSET * Page::size(), &si, flags);
         ENCLAVE_ADD_PAGES.ioctl(&mut file, &mut ap).unwrap();
-        hasher.add(&page, TCS_OFFSET, SecInfo::tcs(), measure);
+        hasher
+            .load(&page, TCS_OFFSET, SecInfo::tcs(), flags)
+            .unwrap();
 
         // Add a REG page
         let si = SecInfo::reg(perms);
-        let mut ap = AddPages::new(&page, REG_OFFSET, &si, flags);
+        let mut ap = AddPages::new(&page, REG_OFFSET * Page::size(), &si, flags);
         ENCLAVE_ADD_PAGES.ioctl(&mut file, &mut ap).unwrap();
-        hasher.add(&page, REG_OFFSET, SecInfo::reg(perms), measure);
+        hasher
+            .load(&page, REG_OFFSET, SecInfo::reg(perms), flags)
+            .unwrap();
 
         // Initialize the enclave.
         let author = sig::Author::new(0, 0);

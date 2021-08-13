@@ -47,10 +47,9 @@ mod tests {
 
     // Our test enclave will have one code page, followed by one TCS page
     // followed by one SSA page.
-    #[allow(clippy::erasing_op)]
-    const CODE_OFFSET: usize = Page::size() * 0;
-    const TCS_OFFSET: usize = Page::size() * 1;
-    const SSA_OFFSET: usize = Page::size() * 2;
+    const CODE_OFFSET: usize = 0;
+    const TCS_OFFSET: usize = 1;
+    const SSA_OFFSET: usize = 2;
     const SSA_COUNT: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(1) };
 
     /// This function contains the contents of the enclave. It is page-sized.
@@ -100,21 +99,21 @@ mod tests {
                 /// the simplest way to copy the code function into a `Page`.
                 /// TODO: make this not awful...
                 src: vec![unsafe { *(code as *const Page) }],
-                dst: span.start + CODE_OFFSET,
+                dst: span.start + CODE_OFFSET * Page::size(),
                 si: page::SecInfo::reg(page::Flags::R | page::Flags::X),
             },
             Segment {
                 src: vec![Page::copy(Tcs::new(
-                    CODE_OFFSET,
-                    SSA_OFFSET,
+                    CODE_OFFSET * Page::size(),
+                    SSA_OFFSET * Page::size(),
                     SSA_COUNT.get(),
                 ))],
-                dst: span.start + TCS_OFFSET,
+                dst: span.start + TCS_OFFSET * Page::size(),
                 si: page::SecInfo::tcs(),
             },
             Segment {
                 src: vec![Page::zeroed()],
-                dst: span.start + SSA_OFFSET,
+                dst: span.start + SSA_OFFSET * Page::size(),
                 si: page::SecInfo::reg(page::Flags::R | page::Flags::W),
             },
         ];
