@@ -58,7 +58,7 @@ impl CertChain {
             if parent.is_none() {
                 continue;
             };
-            if parent.unwrap().issued(&next_cert) != X509VerifyResult::OK {
+            if parent.unwrap().issued(next_cert) != X509VerifyResult::OK {
                 return Err(VerifyError(
                     "invalid issuer relationship in certificate chain".to_string(),
                 ));

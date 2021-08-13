@@ -209,7 +209,7 @@ impl Measurement {
         let mut q1 = bn::BigNum::new()?;
         let mut qr = bn::BigNum::new()?;
 
-        q1.div_rem(&mut qr, &(&s * &s), &m, &mut ctx)?;
+        q1.div_rem(&mut qr, &(&s * &s), m, &mut ctx)?;
         let q2 = &(&s * &qr) / m;
 
         Ok(Signature {

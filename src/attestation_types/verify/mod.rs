@@ -51,7 +51,7 @@ pub fn get_intel_cert_chain_pem() -> Result<String, Box<dyn Error>> {
         .get("SGX-PCK-CRL-Issuer-Chain")
         .unwrap()
         .as_bytes();
-    let trusted_public_pck_chain = percent_decode(&chain).decode_utf8_lossy();
+    let trusted_public_pck_chain = percent_decode(chain).decode_utf8_lossy();
 
     Ok(trusted_public_pck_chain.to_string())
 }
@@ -89,7 +89,7 @@ pub fn verify(
     // The PCK chain is reconstructed with the Quote's leaf cert added to end of tenant's chain.
     let cert_chain = cert_chain::CertChain::new_from_chain(
         X509::stack_from_pem(trusted_public_pck_chain.deref().as_bytes())?,
-        &quote_pck_leaf_cert,
+        quote_pck_leaf_cert,
     );
     cert_chain.len_ok()?;
 
@@ -100,7 +100,7 @@ pub fn verify(
     // The Attestation Key's signature on the Quote is verified.
     let attestation_key = Key::new_from_xy(&q_att_key_pub.to_vec())?;
     let quote_signature = Signature::try_from(&q_enclave_report_sig.to_vec()[..])?.to_der_vec()?;
-    attestation_key.verify_sig(&att_key_signed_material, &quote_signature)?;
+    attestation_key.verify_sig(att_key_signed_material, &quote_signature)?;
 
     // The PCK's signature on the Attestation Public Key is verified.
     let pc_key = Key::new_from_pubkey(quote_pck_leaf_cert.public_key()?)?;
@@ -155,7 +155,7 @@ mod test {
     fn verify_fail_bad_pck_chain() {
         assert!(verify(
             &SAMPLE_V3QUOTE[..],
-            &samples::BAD_PCK_CHAIN,
+            samples::BAD_PCK_CHAIN,
             &SAMPLE_MRENCLAVE[..]
         )
         .is_err());
@@ -165,7 +165,7 @@ mod test {
     fn verify_fail_backwards_pck_chain() {
         assert!(verify(
             &SAMPLE_V3QUOTE[..],
-            &samples::BACKWARDS_PCK_CHAIN,
+            samples::BACKWARDS_PCK_CHAIN,
             &SAMPLE_MRENCLAVE[..]
         )
         .is_err());
@@ -175,7 +175,7 @@ mod test {
     fn verify_fail_incomplete_pck_chain() {
         assert!(verify(
             &SAMPLE_V3QUOTE[..],
-            &samples::INCOMPLETE_PCK_CHAIN,
+            samples::INCOMPLETE_PCK_CHAIN,
             &SAMPLE_MRENCLAVE[..]
         )
         .is_err());
