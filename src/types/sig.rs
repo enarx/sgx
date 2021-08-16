@@ -312,6 +312,22 @@ impl Signature {
     pub fn measurement(&self) -> Measurement {
         self.measurement
     }
+
+    /// Read a `Signature` from a file
+    #[cfg(feature = "std")]
+    pub fn read_from(mut reader: impl std::io::Read) -> std::io::Result<Self> {
+        // # Safety
+        //
+        // This code is safe because we never read from the slice before it is
+        // fully written to.
+
+        let mut sig = std::mem::MaybeUninit::<Signature>::uninit();
+        let ptr = sig.as_mut_ptr() as *mut u8;
+        let len = std::mem::size_of_val(&sig);
+        let buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
+        reader.read_exact(buf).unwrap();
+        unsafe { Ok(sig.assume_init()) }
+    }
 }
 
 #[cfg(test)]
@@ -389,24 +405,6 @@ mod crypto {
         data
     }
 
-    fn loadsig(path: &str) -> Signature {
-        let mut sig: Signature;
-        let buf: &mut [u8];
-
-        unsafe {
-            sig = std::mem::MaybeUninit::uninit().assume_init();
-            buf = std::slice::from_raw_parts_mut(
-                &mut sig as *mut _ as *mut u8,
-                std::mem::size_of_val(&sig),
-            );
-        }
-
-        let mut file = File::open(path).unwrap();
-        file.read_exact(buf).unwrap();
-
-        sig
-    }
-
     fn loadkey(path: &str) -> rsa::Rsa<pkey::Private> {
         let pem = load(path);
         rsa::Rsa::private_key_from_pem(&pem).unwrap()
@@ -415,7 +413,7 @@ mod crypto {
     #[test]
     fn selftest() {
         let bin = load("tests/encl.bin");
-        let sig = loadsig("tests/encl.ss");
+        let sig = Signature::read_from(File::open("tests/encl.ss").unwrap()).unwrap();
         let key = loadkey("tests/encl.pem");
 
         let len = (bin.len() - 1) / Page::size();
