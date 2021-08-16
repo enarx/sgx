@@ -71,7 +71,7 @@ impl Builder {
         let mut file = OpenOptions::new()
             .read(true)
             .write(true)
-            .open("/dev/sgx/enclave")?;
+            .open("/dev/sgx_enclave")?;
 
         // Map the memory for the enclave
         let mmap = Map::map(span.count)
