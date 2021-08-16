@@ -83,7 +83,7 @@ impl Enclave {
 
 /// The registers that can be passed to/from the enclave
 #[repr(C)]
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub struct Registers {
     pub rdi: Register<usize>,
