@@ -125,7 +125,7 @@ mod test {
 
     #[fixture]
     fn file() -> File {
-        File::open("/dev/sgx/enclave").unwrap()
+        File::open("/dev/sgx_enclave").unwrap()
     }
 
     #[fixture]
