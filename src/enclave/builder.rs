@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use super::{enclave::Enclave, ioctls};
+use super::{ioctls, Enclave};
 use crate::loader::{Flags, Loader};
 use crate::types::page::{self, Class, SecInfo};
-use crate::types::tcs::Tcs;
 use crate::types::{secs::*, sig::*};
 
 use lset::Span;
@@ -23,7 +22,7 @@ pub struct Builder {
     file: File,
     mmap: Map<perms::Unknown>,
     perm: Vec<(Span<usize>, SecInfo)>,
-    tcsp: Vec<*mut Tcs>,
+    tcsp: Vec<usize>,
 }
 
 impl Builder {
@@ -31,7 +30,11 @@ impl Builder {
     /// into SGX's EPC. This function issues `ECREATE` instruction.
     ///
     /// TODO add more comprehensive docs
-    pub fn new(span: impl Into<Span<usize>>, ssa_pages: NonZeroU32, parameters: Parameters) -> Result<Self> {
+    pub fn new(
+        span: impl Into<Span<usize>>,
+        ssa_pages: NonZeroU32,
+        parameters: Parameters,
+    ) -> Result<Self> {
         let span = span.into();
 
         // Open the device.
@@ -65,7 +68,7 @@ impl Builder {
     /// `EINIT` instruction.
     ///
     /// TODO add more comprehensive docs.
-    pub fn build(mut self, signature: &Signature) -> Result<Arc<RwLock<Enclave>>> {
+    pub fn build(mut self, signature: &Signature) -> Result<Arc<Enclave>> {
         // Initialize the enclave.
         let init = ioctls::Init::new(signature);
         ioctls::ENCLAVE_INIT.ioctl(&mut self.file, &init)?;
@@ -107,7 +110,10 @@ impl Builder {
             //eprintln!("{:016x}-{:016x} {:?}", line.start, line.end, si);
         }
 
-        Ok(Arc::new(RwLock::new(Enclave::new(self.mmap, self.tcsp))))
+        Ok(Arc::new(Enclave {
+            _mem: self.mmap,
+            tcs: RwLock::new(self.tcsp),
+        }))
     }
 }
 
@@ -146,8 +152,7 @@ impl Loader for Builder {
         // Keep track of TCS pages.
         if secinfo.class == page::Class::Tcs {
             for i in 0..pages.len() {
-                let addr = span.start + i * Page::size();
-                self.tcsp.push(addr as _);
+                self.tcsp.push(span.start + i * Page::size());
             }
         }
 
