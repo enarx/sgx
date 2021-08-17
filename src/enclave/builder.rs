@@ -21,7 +21,6 @@ use std::sync::{Arc, RwLock};
 ///
 /// TODO add more comprehensive docs.
 pub struct Builder {
-    sign: Parameters,
     file: File,
     mmap: Map<perms::Unknown>,
     hash: Hasher,
@@ -51,16 +50,15 @@ impl Builder {
             .into();
 
         // Create the hasher.
-        let hash = Hasher::new(span.count, StateSaveArea::frame_size());
+        let parameters = Parameters::default();
+        let hash = Hasher::new(span.count, StateSaveArea::frame_size(), parameters);
 
         // Create the enclave.
-        let sign = Parameters::default();
-        let secs = Secs::new(span, StateSaveArea::frame_size(), sign);
+        let secs = Secs::new(span, StateSaveArea::frame_size(), parameters);
         let create = ioctls::Create::new(&secs);
         ioctls::ENCLAVE_CREATE.ioctl(&mut file, &create)?;
 
         Ok(Self {
-            sign,
             file,
             mmap,
             hash,
@@ -81,7 +79,7 @@ impl Builder {
 
         // Create the enclave signature
         let vendor = Author::new(0, 0);
-        let sig = self.hash.finish(self.sign).sign(vendor, key)?;
+        let sig = self.hash.finish().sign(vendor, key)?;
 
         // Initialize the enclave.
         let init = ioctls::Init::new(&sig);
