@@ -20,14 +20,17 @@ pub use enclave::*;
 mod tests {
     use super::*;
 
+    use crate::crypto::Hasher;
     use crate::loader::{Flags, Loader};
     use crate::types::page;
+    use crate::types::sig::{Author, Parameters};
     use crate::types::tcs::Tcs;
 
     use std::num::NonZeroU32;
 
     use lset::Span;
     use primordial::Page;
+    use openssl::{bn, rsa};
 
     /// # Overview of an Enclave
     ///
@@ -88,8 +91,10 @@ mod tests {
             count: 1 * 1024 * 1024,
         };
 
-        // Instantiate the enclave builder.
-        let mut builder = Builder::new(span).unwrap();
+        // Create the signature parameters, the builder and the hasher.
+        let parameters = Parameters::default();
+        let mut builder = Builder::new(span, SSA_COUNT, parameters).unwrap();
+        let mut hasher = Hasher::new(span.count, SSA_COUNT, parameters);
 
         // Add the code page.
         // # Safety
@@ -102,6 +107,7 @@ mod tests {
         builder
             .load(pages, CODE_OFFSET, secinfo, Flags::Measure)
             .unwrap();
+        hasher.load(pages, CODE_OFFSET, secinfo, Flags::Measure).unwrap();
 
         // Add the TCS page.
         let pages = [Page::copy(Tcs::new(
@@ -113,6 +119,7 @@ mod tests {
         builder
             .load(pages, TCS_OFFSET, secinfo, Flags::Measure)
             .unwrap();
+        hasher.load(pages, TCS_OFFSET, secinfo, Flags::Measure).unwrap();
 
         // Add the SSA page.
         let pages = [Page::zeroed()];
@@ -120,9 +127,18 @@ mod tests {
         builder
             .load(pages, SSA_OFFSET, secinfo, Flags::Measure)
             .unwrap();
+        hasher.load(pages, SSA_OFFSET, secinfo, Flags::Measure).unwrap();
+
+        // Generate a signing key.
+        let exp = bn::BigNum::from_u32(3u32).unwrap();
+        let key = rsa::Rsa::generate_with_e(3072, &exp).unwrap();
+
+        // Create the enclave signature
+        let vendor = Author::new(0, 0);
+        let signature = hasher.finish().sign(vendor, key).unwrap();
 
         // Build the enclave.
-        let enclave = builder.build().unwrap();
+        let enclave = builder.build(&signature).unwrap();
         let mut thread = Thread::new(enclave).unwrap();
 
         // Set up the register to pass to the enclave.

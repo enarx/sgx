@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::{enclave::Enclave, ioctls};
-use crate::crypto::Hasher;
 use crate::loader::{Flags, Loader};
 use crate::types::page::{self, Class, SecInfo};
 use crate::types::tcs::Tcs;
-use crate::types::{secs::*, sig::*, ssa::StateSaveArea};
+use crate::types::{secs::*, sig::*};
 
 use lset::Span;
 use mmarinus::{perms, Kind, Map};
-use openssl::{bn, rsa};
 use primordial::Page;
 
 use std::fs::{File, OpenOptions};
 use std::io::Result;
 use std::mem::forget;
+use std::num::NonZeroU32;
 use std::sync::{Arc, RwLock};
 
 /// An SGX enclave builder
@@ -23,7 +22,6 @@ use std::sync::{Arc, RwLock};
 pub struct Builder {
     file: File,
     mmap: Map<perms::Unknown>,
-    hash: Hasher,
     perm: Vec<(Span<usize>, SecInfo)>,
     tcsp: Vec<*mut Tcs>,
 }
@@ -33,7 +31,7 @@ impl Builder {
     /// into SGX's EPC. This function issues `ECREATE` instruction.
     ///
     /// TODO add more comprehensive docs
-    pub fn new(span: impl Into<Span<usize>>) -> Result<Self> {
+    pub fn new(span: impl Into<Span<usize>>, ssa_pages: NonZeroU32, parameters: Parameters) -> Result<Self> {
         let span = span.into();
 
         // Open the device.
@@ -49,19 +47,14 @@ impl Builder {
             .known::<perms::None>(Kind::Private)?
             .into();
 
-        // Create the hasher.
-        let parameters = Parameters::default();
-        let hash = Hasher::new(span.count, StateSaveArea::frame_size(), parameters);
-
         // Create the enclave.
-        let secs = Secs::new(span, StateSaveArea::frame_size(), parameters);
+        let secs = Secs::new(span, ssa_pages, parameters);
         let create = ioctls::Create::new(&secs);
         ioctls::ENCLAVE_CREATE.ioctl(&mut file, &create)?;
 
         Ok(Self {
             file,
             mmap,
-            hash,
             perm: Vec::new(),
             tcsp: Vec::new(),
         })
@@ -72,17 +65,9 @@ impl Builder {
     /// `EINIT` instruction.
     ///
     /// TODO add more comprehensive docs.
-    pub fn build(mut self) -> Result<Arc<RwLock<Enclave>>> {
-        // Generate a signing key.
-        let exp = bn::BigNum::from_u32(3u32)?;
-        let key = rsa::Rsa::generate_with_e(3072, &exp)?;
-
-        // Create the enclave signature
-        let vendor = Author::new(0, 0);
-        let sig = self.hash.finish().sign(vendor, key)?;
-
+    pub fn build(mut self, signature: &Signature) -> Result<Arc<RwLock<Enclave>>> {
         // Initialize the enclave.
-        let init = ioctls::Init::new(&sig);
+        let init = ioctls::Init::new(signature);
         ioctls::ENCLAVE_INIT.ioctl(&mut self.file, &init)?;
 
         // Fix up mapped permissions.
@@ -148,9 +133,6 @@ impl Loader for Builder {
         // Update the enclave.
         let mut ap = ioctls::AddPages::new(pages, offset, &secinfo, flags);
         ioctls::ENCLAVE_ADD_PAGES.ioctl(&mut self.file, &mut ap)?;
-
-        // Update the hash.
-        self.hash.load(pages, offset / Page::size(), secinfo, flags).unwrap();
 
         // Calculate an absolute span for this region.
         let span = Span {
