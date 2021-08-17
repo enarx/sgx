@@ -17,33 +17,6 @@ use std::io::Result;
 use std::mem::forget;
 use std::sync::{Arc, RwLock};
 
-/// A loadable segment of code
-pub struct Segment {
-    /// Segment data
-    pub src: Vec<Page>,
-    /// The address where this segment starts
-    pub dst: usize,
-    /// The security information (`SecInfo`) about a page
-    pub si: SecInfo,
-}
-
-fn f2p(flags: page::Flags) -> libc::c_int {
-    let mut prot = libc::PROT_NONE;
-    if flags.contains(page::Flags::R) {
-        prot |= libc::PROT_READ;
-    }
-
-    if flags.contains(page::Flags::W) {
-        prot |= libc::PROT_WRITE;
-    }
-
-    if flags.contains(page::Flags::X) {
-        prot |= libc::PROT_EXEC;
-    }
-
-    prot
-}
-
 /// An SGX enclave builder
 ///
 /// TODO add more comprehensive docs.
@@ -96,48 +69,6 @@ impl Builder {
         })
     }
 
-    /// Loads a segment of memory into the SGX enclave. This function issues `EADD`
-    /// instruction.
-    ///
-    /// TODO add more comprehensive docs.
-    pub fn load(&mut self, segs: &[Segment]) -> Result<()> {
-        for seg in segs {
-            // Ignore segments with no pages.
-            if seg.src.is_empty() {
-                continue;
-            }
-
-            let off = seg.dst - self.mmap.addr();
-
-            // Update the enclave.
-            let mut ap = ioctls::AddPages::new(&seg.src, off, &seg.si, Flags::Measure);
-            ioctls::ENCLAVE_ADD_PAGES.ioctl(&mut self.file, &mut ap)?;
-
-            // Update the hash.
-            self.hash
-                .load(&seg.src, off / Page::size(), seg.si, Flags::Measure)
-                .unwrap();
-
-            // Save permissions fixups for later.
-            self.perm.push((
-                Span {
-                    start: seg.dst,
-                    count: seg.src.len() * Page::size(),
-                },
-                seg.si,
-            ));
-
-            if seg.si.class == page::Class::Tcs {
-                for i in 0..seg.src.len() {
-                    let addr = seg.dst + i * Page::size();
-                    self.tcsp.push(addr as _);
-                }
-            }
-        }
-
-        Ok(())
-    }
-
     /// Consumes this `Builder` and finalizes SGX enclave by generating
     /// signing keys, initializing the enclave, etc. This function issues
     /// `EINIT` instruction.
@@ -161,7 +92,23 @@ impl Builder {
         for (span, si) in self.perm {
             let rwx = match si.class {
                 Class::Tcs => libc::PROT_READ | libc::PROT_WRITE,
-                Class::Reg => f2p(si.flags),
+                Class::Reg => {
+                    let mut prot = libc::PROT_NONE;
+
+                    if si.flags.contains(page::Flags::R) {
+                        prot |= libc::PROT_READ;
+                    }
+
+                    if si.flags.contains(page::Flags::W) {
+                        prot |= libc::PROT_WRITE;
+                    }
+
+                    if si.flags.contains(page::Flags::X) {
+                        prot |= libc::PROT_EXEC;
+                    }
+
+                    prot
+                }
                 _ => panic!("Unsupported class!"),
             };
 
@@ -178,5 +125,52 @@ impl Builder {
         }
 
         Ok(Arc::new(RwLock::new(Enclave::new(self.mmap, self.tcsp))))
+    }
+}
+
+impl Loader for Builder {
+    type Error = std::io::Error;
+
+    fn load(
+        &mut self,
+        pages: impl AsRef<[Page]>,
+        offset: usize,
+        secinfo: SecInfo,
+        flags: impl Into<flagset::FlagSet<Flags>>,
+    ) -> Result<()> {
+        let offset = offset * Page::size();
+        let pages = pages.as_ref();
+        let flags = flags.into();
+
+        // Ignore regions with no pages.
+        if pages.is_empty() {
+            return Ok(());
+        }
+
+        // Update the enclave.
+        let mut ap = ioctls::AddPages::new(pages, offset, &secinfo, flags);
+        ioctls::ENCLAVE_ADD_PAGES.ioctl(&mut self.file, &mut ap)?;
+
+        // Update the hash.
+        self.hash.load(pages, offset / Page::size(), secinfo, flags).unwrap();
+
+        // Calculate an absolute span for this region.
+        let span = Span {
+            start: self.mmap.addr() + offset,
+            count: pages.len() * Page::size(),
+        };
+
+        // Save permissions fixups for later.
+        self.perm.push((span, secinfo));
+
+        // Keep track of TCS pages.
+        if secinfo.class == page::Class::Tcs {
+            for i in 0..pages.len() {
+                let addr = span.start + i * Page::size();
+                self.tcsp.push(addr as _);
+            }
+        }
+
+        Ok(())
     }
 }

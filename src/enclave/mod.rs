@@ -20,6 +20,7 @@ pub use enclave::*;
 mod tests {
     use super::*;
 
+    use crate::loader::{Flags, Loader};
     use crate::types::page;
     use crate::types::tcs::Tcs;
 
@@ -90,34 +91,35 @@ mod tests {
         // Instantiate the enclave builder.
         let mut builder = Builder::new(span).unwrap();
 
-        // Copy the code, TCS and SSA pages into the enclave.
-        let segs: [Segment; 3] = [
-            Segment {
-                /// # Safety
-                /// Yes, it depends on undefined behavior. Yes, the pointer is
-                /// unaligned. Yes, this is horrible. Sorry! However, this is
-                /// the simplest way to copy the code function into a `Page`.
-                /// TODO: make this not awful...
-                src: vec![unsafe { *(code as *const Page) }],
-                dst: span.start + CODE_OFFSET * Page::size(),
-                si: page::SecInfo::reg(page::Flags::R | page::Flags::X),
-            },
-            Segment {
-                src: vec![Page::copy(Tcs::new(
-                    CODE_OFFSET * Page::size(),
-                    SSA_OFFSET * Page::size(),
-                    SSA_COUNT.get(),
-                ))],
-                dst: span.start + TCS_OFFSET * Page::size(),
-                si: page::SecInfo::tcs(),
-            },
-            Segment {
-                src: vec![Page::zeroed()],
-                dst: span.start + SSA_OFFSET * Page::size(),
-                si: page::SecInfo::reg(page::Flags::R | page::Flags::W),
-            },
-        ];
-        builder.load(&segs).unwrap();
+        // Add the code page.
+        // # Safety
+        // Yes, it depends on undefined behavior. Yes, the pointer is
+        // unaligned. Yes, this is horrible. Sorry! However, this is
+        // the simplest way to copy the code function into a `Page`.
+        // TODO: make this not awful...
+        let pages = unsafe { [*(code as *const Page)] };
+        let secinfo = page::SecInfo::reg(page::Flags::R | page::Flags::X);
+        builder
+            .load(pages, CODE_OFFSET, secinfo, Flags::Measure)
+            .unwrap();
+
+        // Add the TCS page.
+        let pages = [Page::copy(Tcs::new(
+            CODE_OFFSET * Page::size(),
+            SSA_OFFSET * Page::size(),
+            SSA_COUNT.get(),
+        ))];
+        let secinfo = page::SecInfo::tcs();
+        builder
+            .load(pages, TCS_OFFSET, secinfo, Flags::Measure)
+            .unwrap();
+
+        // Add the SSA page.
+        let pages = [Page::zeroed()];
+        let secinfo = page::SecInfo::reg(page::Flags::R | page::Flags::W);
+        builder
+            .load(pages, SSA_OFFSET, secinfo, Flags::Measure)
+            .unwrap();
 
         // Build the enclave.
         let enclave = builder.build().unwrap();
