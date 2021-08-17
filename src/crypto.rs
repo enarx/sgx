@@ -8,6 +8,7 @@
 #![allow(clippy::unreadable_literal)]
 
 use crate::loader::{Flags, Loader};
+use crate::types::sig::Parameters;
 use crate::types::{page::SecInfo, sig};
 
 use openssl::sha;
@@ -21,11 +22,11 @@ use std::num::NonZeroU32;
 /// summarized at https://github.com/enarx/enarx/wiki/SGX-Measurement. The leaf
 /// functions are mimicked to obtain these values, but are not actually called here;
 /// to use them, refer to the [iocuddle-sgx](../../iocuddle-sgx) library.
-pub struct Hasher(sha::Sha256);
+pub struct Hasher(sha::Sha256, Parameters);
 
 impl Hasher {
     /// Mimics call to SGX_IOC_ENCLAVE_CREATE (ECREATE).
-    pub fn new(size: usize, ssa_pages: NonZeroU32) -> Self {
+    pub fn new(size: usize, ssa_pages: NonZeroU32, parameters: Parameters) -> Self {
         let size = size as u64;
 
         // This value documented in 41.3.
@@ -37,15 +38,12 @@ impl Hasher {
         sha256.update(&size.to_le_bytes());
         sha256.update(&[0u8; 44]); // Reserved
 
-        Self(sha256)
+        Self(sha256, parameters)
     }
 
     /// Produces MRENCLAVE value by hashing with SHA256.
-    pub fn finish(self, params: impl Into<Option<sig::Parameters>>) -> sig::Measurement {
-        params
-            .into()
-            .unwrap_or_default()
-            .measurement(self.0.finish())
+    pub fn finish(self) -> sig::Measurement {
+        self.1.measurement(self.0.finish())
     }
 }
 
@@ -122,7 +120,7 @@ pub(crate) mod test {
         //   enclave size: the next power of two beyond our segments
         //      ssa pages: 1
         let ssa_pages = NonZeroU32::new(1).unwrap();
-        let mut hasher = Hasher::new(size.next_power_of_two(), ssa_pages);
+        let mut hasher = Hasher::new(size.next_power_of_two(), ssa_pages, Parameters::default());
 
         let mut off = 0;
         for i in input {
@@ -131,7 +129,7 @@ pub(crate) mod test {
         }
 
         // Use default signature parameters
-        hasher.finish(None).mrenclave()
+        hasher.finish().mrenclave()
     }
 
     #[test]

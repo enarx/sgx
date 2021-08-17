@@ -125,6 +125,7 @@ mod test {
 
     use crate::crypto::Hasher;
     use crate::loader::Loader;
+    use crate::types::sig::Parameters;
     use crate::types::{page::Flags as Perms, secs};
 
     use flagset::FlagSet;
@@ -172,7 +173,7 @@ mod test {
         };
 
         // Create the hasher.
-        let mut hasher = Hasher::new(span.count, SSA_PAGES);
+        let mut hasher = Hasher::new(span.count, SSA_PAGES, Parameters::default());
 
         // Create the enclave.
         let secs = secs::Secs::new(span, SSA_PAGES, None);
@@ -197,7 +198,7 @@ mod test {
 
         // Initialize the enclave.
         let author = sig::Author::new(0, 0);
-        let sig = hasher.finish(None).sign(author, key).unwrap();
+        let sig = hasher.finish().sign(author, key).unwrap();
         ENCLAVE_INIT.ioctl(&mut file, &Init::new(&sig)).unwrap();
     }
 }
