@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::fmt;
-use std::sync::{Arc, RwLock};
 
-use mmarinus::{perms, Map};
-use primordial::Register;
+use primordial::{Address, Register};
 
+use super::Thread;
 use crate::types::ssa::Exception;
-use crate::types::tcs::Tcs;
 
 /// How to enter an enclave
 #[repr(u32)]
@@ -18,19 +16,6 @@ pub enum Entry {
 
     /// Resume an enclave after an asynchronous exit
     Resume = 3,
-}
-
-/// Memory address where exception occurred.
-///
-/// TODO add more comprehensive docs
-#[repr(transparent)]
-#[derive(Copy, Clone)]
-pub struct Address<T: Copy + fmt::LowerHex>(T);
-
-impl<T: Copy + fmt::LowerHex> fmt::Debug for Address<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:016x}", self.0)
-    }
 }
 
 /// This struct assigns u16 for the trap field. But it contains only exception
@@ -49,7 +34,7 @@ pub struct ExceptionInfo {
     pub code: u16,
 
     /// Memory address where exception occurred
-    pub addr: Address<u64>,
+    pub addr: Address<u64, ()>,
 }
 
 impl fmt::Debug for ExceptionInfo {
@@ -60,24 +45,6 @@ impl fmt::Debug for ExceptionInfo {
             .field("code", &self.code)
             .field("addr", &self.addr)
             .finish()
-    }
-}
-
-/// Represents a fully initialized enclave, i.e., after `EINIT` instruction
-/// was issued and `MRENCLAVE` measurement is complete, and the enclave is
-/// ready to start user code execution.
-///
-/// TODO add more comprehensive docs
-pub struct Enclave {
-    _mem: Map<perms::Unknown>,
-    tcs: Vec<*mut Tcs>,
-}
-
-impl Enclave {
-    // Use `sgx::enclave::Builder::build` to create a new SGX `Enclave`
-    // instance.
-    pub(super) fn new(mem: Map<perms::Unknown>, tcs: Vec<*mut Tcs>) -> Self {
-        Self { _mem: mem, tcs }
     }
 }
 
@@ -103,7 +70,7 @@ struct Run {
     function: u32,
     exception_vector: u16,
     exception_error_code: u16,
-    exception_addr: Register<u64>,
+    exception_addr: Address<u64, ()>,
     user_handler: Register<u64>,
     user_data: Register<u64>,
     reserved: [u64; 27],
@@ -131,41 +98,7 @@ extern "C" fn handler(
     0
 }
 
-/// A single thread of execution inside an enclave.
-pub struct Thread {
-    enc: Arc<RwLock<Enclave>>,
-    tcs: *mut Tcs,
-    fnc: unsafe extern "C" fn(
-        rdi: Register<usize>,
-        rsi: Register<usize>,
-        rdx: Register<usize>,
-        leaf: Entry,
-        r8: Register<usize>,
-        r9: Register<usize>,
-        run: &mut Run,
-    ) -> libc::c_int,
-}
-
-impl Drop for Thread {
-    fn drop(&mut self) {
-        self.enc.write().unwrap().tcs.push(self.tcs)
-    }
-}
-
 impl Thread {
-    /// Create a new thread of execuation for an enclave.
-    pub fn new(enc: Arc<RwLock<Enclave>>) -> Option<Self> {
-        let tcs = enc.write().unwrap().tcs.pop()?;
-
-        let fnc = vdso::Vdso::locate()
-            .expect("vDSO not found")
-            .lookup("__vdso_sgx_enter_enclave")
-            .expect("__vdso_sgx_enter_enclave not found");
-        let fnc = unsafe { core::mem::transmute(fnc) };
-
-        Some(Self { enc, tcs, fnc })
-    }
-
     /// Enter an enclave.
     ///
     /// This function enters an enclave using `Entry` and provides the
@@ -231,7 +164,7 @@ impl Thread {
         Err(ExceptionInfo {
             trap: unsafe { core::mem::transmute(run.exception_vector as u8) },
             code: run.exception_error_code,
-            addr: Address(run.exception_addr.into()),
+            addr: run.exception_addr,
             last: unsafe { core::mem::transmute(run.function) },
         })
     }

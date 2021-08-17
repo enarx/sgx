@@ -4,17 +4,61 @@
 //! Section references in further documentation refer to this document.
 //! https://www.intel.com/content/dam/www/public/emea/xe/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3d-part-4-manual.pdf
 
-#![allow(clippy::module_inception)]
 #![cfg(feature = "crypto")]
 #![cfg(feature = "std")]
 #![cfg(feature = "asm")]
 
 mod builder;
-mod enclave;
+mod execute;
 mod ioctls;
 
-pub use builder::*;
-pub use enclave::*;
+pub use builder::Builder;
+pub use execute::{Entry, ExceptionInfo, Registers};
+
+use std::sync::{Arc, RwLock};
+
+use mmarinus::{perms, Map};
+use vdso::Symbol;
+
+/// Represents a fully initialized enclave, i.e., after `EINIT` instruction
+/// was issued and `MRENCLAVE` measurement is complete, and the enclave is
+/// ready to start user code execution.
+///
+/// TODO add more comprehensive docs
+pub struct Enclave {
+    _mem: Map<perms::Unknown>,
+    tcs: RwLock<Vec<usize>>,
+}
+
+impl Enclave {
+    /// Create a new thread of execuation for an enclave.
+    pub fn spawn(self: Arc<Enclave>) -> Option<Thread> {
+        let fnc = vdso::Vdso::locate()
+            .expect("vDSO not found")
+            .lookup("__vdso_sgx_enter_enclave")
+            .expect("__vdso_sgx_enter_enclave not found");
+
+        let tcs = self.tcs.write().unwrap().pop()?;
+        Some(Thread {
+            enc: self,
+            tcs,
+            fnc,
+        })
+    }
+}
+
+/// A single thread of execution inside an enclave.
+pub struct Thread {
+    enc: Arc<Enclave>,
+    tcs: usize,
+    fnc: &'static Symbol,
+}
+
+impl Drop for Thread {
+    fn drop(&mut self) {
+        self.enc.tcs.write().unwrap().push(self.tcs)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -29,8 +73,8 @@ mod tests {
     use std::num::NonZeroU32;
 
     use lset::Span;
-    use primordial::Page;
     use openssl::{bn, rsa};
+    use primordial::Page;
 
     /// # Overview of an Enclave
     ///
@@ -107,7 +151,9 @@ mod tests {
         builder
             .load(pages, CODE_OFFSET, secinfo, Flags::Measure)
             .unwrap();
-        hasher.load(pages, CODE_OFFSET, secinfo, Flags::Measure).unwrap();
+        hasher
+            .load(pages, CODE_OFFSET, secinfo, Flags::Measure)
+            .unwrap();
 
         // Add the TCS page.
         let pages = [Page::copy(Tcs::new(
@@ -119,7 +165,9 @@ mod tests {
         builder
             .load(pages, TCS_OFFSET, secinfo, Flags::Measure)
             .unwrap();
-        hasher.load(pages, TCS_OFFSET, secinfo, Flags::Measure).unwrap();
+        hasher
+            .load(pages, TCS_OFFSET, secinfo, Flags::Measure)
+            .unwrap();
 
         // Add the SSA page.
         let pages = [Page::zeroed()];
@@ -127,7 +175,9 @@ mod tests {
         builder
             .load(pages, SSA_OFFSET, secinfo, Flags::Measure)
             .unwrap();
-        hasher.load(pages, SSA_OFFSET, secinfo, Flags::Measure).unwrap();
+        hasher
+            .load(pages, SSA_OFFSET, secinfo, Flags::Measure)
+            .unwrap();
 
         // Generate a signing key.
         let exp = bn::BigNum::from_u32(3u32).unwrap();
@@ -139,10 +189,10 @@ mod tests {
 
         // Build the enclave.
         let enclave = builder.build(&signature).unwrap();
-        let mut thread = Thread::new(enclave).unwrap();
+        let mut thread = enclave.spawn().unwrap();
 
         // Set up the register to pass to the enclave.
-        let mut registers = enclave::Registers {
+        let mut registers = Registers {
             rdi: 1.into(),
             rsi: 2.into(),
             rdx: 3.into(),
@@ -151,12 +201,12 @@ mod tests {
         };
 
         // Enter the enclave.
-        thread.enter(enclave::Entry::Enter, &mut registers).unwrap();
+        thread.enter(Entry::Enter, &mut registers).unwrap();
 
         // Validate that all registers are incremented.
         assert_eq!(
             registers,
-            enclave::Registers {
+            Registers {
                 rdi: 2.into(),
                 rsi: 3.into(),
                 rdx: 4.into(),
