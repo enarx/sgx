@@ -1,8 +1,44 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Intel SGX Documentation is available at the following link.
-//! Section references in further documentation refer to this document.
-//! https://www.intel.com/content/dam/www/public/emea/xe/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3d-part-4-manual.pdf
+//! # Overview of an Enclave
+//!
+//! Enclaves are constructed from:
+//!
+//!   1. One or more pages of code and data. This is the enclave contents.
+//!
+//!   2. One or more State Save Area (SSA) frames per thread. Each SSA frame
+//!      enables one layer of exception handling. During an exception, the
+//!      CPU performs an asynchronous enclave exit (AEX) where it store the
+//!      CPU state in the current SSA frame (CSSA) and then exits.
+//!
+//!   3. One Thread Control Structure (TCS) page per thread. Inside the
+//!      enclave, this page is accessed exclusively by the hardware. Each
+//!      TCS page contains the location and number of the thread's SSA
+//!      frames as well as the address of the enclave to jump to when
+//!      entering (i.e. the entry point).
+//!
+//! # Building an Enclave
+//!
+//! This `Builder` object will help you construct an enclave. First, you will
+//! instantiate the `Builder` using `Builder::new()` or `Builder::new_at()`.
+//! Next, you will add all the relevant pages using the `Loader::load()`
+//! trait method. Finally, you will call `Builder::build()` to verify the
+//! enclave signature and finalize the enclave construction.
+//!
+//! # Executing an Enclave
+//!
+//! Once you have built an `Enclave` you will want to execute it. This is done
+//! by creating a new `Thread` object using `Enclave::spawn()`. Once you have
+//! a `Thread` object, you can use `Thread::enter()` to enter the enclave,
+//! passing the specified registers. When the enclave returns, you can read
+//! the register state from the same structure.
+//!
+//! # Additional Information
+//!
+//! The Intel SGX documentation is available [here]. Section references in
+//! further documentation refer to this document.
+//!
+//! [here]: https://www.intel.com/content/dam/www/public/emea/xe/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3d-part-4-manual.pdf
 
 #![cfg(feature = "crypto")]
 #![cfg(feature = "std")]
@@ -20,11 +56,10 @@ use std::sync::{Arc, RwLock};
 use mmarinus::{perms, Map};
 use vdso::Symbol;
 
-/// Represents a fully initialized enclave, i.e., after `EINIT` instruction
-/// was issued and `MRENCLAVE` measurement is complete, and the enclave is
-/// ready to start user code execution.
+/// A full initialized enclave
 ///
-/// TODO add more comprehensive docs
+/// To begin execution in this enclave, create a new `Thread` object using
+/// `Enclave::spawn()`.
 pub struct Enclave {
     _mem: Map<perms::Unknown>,
     tcs: RwLock<Vec<usize>>,
@@ -32,6 +67,10 @@ pub struct Enclave {
 
 impl Enclave {
     /// Create a new thread of execuation for an enclave.
+    ///
+    /// Note that this method does not create a system thread. If you want to
+    /// execute multiple enclave threads in parallel, you'll need to spawn
+    /// operating system threads in addition to this thread object.
     pub fn spawn(self: Arc<Enclave>) -> Option<Thread> {
         let fnc = vdso::Vdso::locate()
             .expect("vDSO not found")
@@ -47,7 +86,9 @@ impl Enclave {
     }
 }
 
-/// A single thread of execution inside an enclave.
+/// A single thread of execution inside an enclave
+///
+/// You can begin enclave execution using `Thread::enter()`.
 pub struct Thread {
     enc: Arc<Enclave>,
     tcs: usize,
@@ -72,26 +113,8 @@ mod tests {
 
     use std::num::NonZeroU32;
 
-    use lset::Span;
     use openssl::{bn, rsa};
     use primordial::Page;
-
-    /// # Overview of an Enclave
-    ///
-    /// Enclaves are constructed from:
-    ///
-    ///   1. One or more pages of code and data. This is enclave contents.
-    ///
-    ///   2. One or more State Save Area (SSA) pages per thread. Each SSA page
-    ///      enables one layer of exception handling. During an exception, the
-    ///      CPU performs an asynchronous enclave exit (AEX) where it store the
-    ///      CPU state in the current SSA page (CSSA) and then exits.
-    ///
-    ///   3. One Thread Control Structure (TCS) page per thread. Inside the
-    ///      enclave, this page is accessed exclusively by the hardware. Each
-    ///      TCS page contains the location and number of the thread's SSA
-    ///      pages as well as address of the enclave to jump to when entering
-    ///      (i.e. the entry point).
 
     // Our test enclave will have one code page, followed by one TCS page
     // followed by one SSA page.
@@ -99,6 +122,7 @@ mod tests {
     const TCS_OFFSET: usize = 1;
     const SSA_OFFSET: usize = 2;
     const SSA_COUNT: NonZeroU32 = unsafe { NonZeroU32::new_unchecked(1) };
+    const ENCLAVE_SIZE: usize = 1 * 1024 * 1024;
 
     /// This function contains the contents of the enclave. It is page-sized.
     /// Ideally, it would be page aligned as well. However, Rust does not
@@ -129,16 +153,10 @@ mod tests {
     #[test]
     #[cfg_attr(not(has_sgx), ignore)]
     fn test() {
-        // Define the location and size of the enclave.
-        let span = Span {
-            start: 1 * 1024 * 1024 * 1024,
-            count: 1 * 1024 * 1024,
-        };
-
         // Create the signature parameters, the builder and the hasher.
         let parameters = Parameters::default();
-        let mut builder = Builder::new(span, SSA_COUNT, parameters).unwrap();
-        let mut hasher = Hasher::new(span.count, SSA_COUNT, parameters);
+        let mut builder = Builder::new(ENCLAVE_SIZE, SSA_COUNT, parameters).unwrap();
+        let mut hasher = Hasher::new(ENCLAVE_SIZE, SSA_COUNT, parameters);
 
         // Add the code page.
         // # Safety

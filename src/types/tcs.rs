@@ -47,7 +47,17 @@ pub struct Tcs {
 }
 
 impl Tcs {
-    /// Creates new TCS from an entry offset, SSA offset, and number of SSA frames.
+    /// Creates a new TCS page
+    ///
+    /// This method takes three parameters.
+    ///
+    /// 1. `entry` - The offset in the enclave to jump to on enclave entry.
+    /// 2. `ssa` - The offset in the enclave for the SSA frames.
+    /// 3. `nssa` - The number of frames at the `ssa` offset.
+    ///
+    /// Note that while the size of each frame is determined during enclave
+    /// creation, each thread (i.e. TCS page) can have a different number of
+    /// SSA frames.
     pub fn new(entry: usize, ssa: usize, nssa: u32) -> Self {
         Self {
             state: 0,
