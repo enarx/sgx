@@ -35,7 +35,7 @@ impl Secs {
     /// Creates a new SECS struct based on a base address and spec.
     pub fn new(
         span: Span<usize, usize>,
-        ssa_pages: NonZeroU32,
+        ssa_frame_pages: NonZeroU32,
         parameters: impl Into<Option<Parameters>>,
     ) -> Self {
         let parameters = parameters.into().unwrap_or_default();
@@ -43,7 +43,7 @@ impl Secs {
         Self {
             size: span.count as _,
             baseaddr: span.start as _,
-            ssaframesize: ssa_pages,
+            ssaframesize: ssa_frame_pages,
             miscselect: parameters.misc.data & parameters.misc.mask,
             reserved0: [0; 24],
             attributes: parameters.attr.data & parameters.attr.mask,

@@ -26,7 +26,7 @@ pub struct Hasher(sha::Sha256, Parameters);
 
 impl Hasher {
     /// Mimics call to SGX_IOC_ENCLAVE_CREATE (ECREATE).
-    pub fn new(size: usize, ssa_pages: NonZeroU32, parameters: Parameters) -> Self {
+    pub fn new(size: usize, ssa_frame_pages: NonZeroU32, parameters: Parameters) -> Self {
         let size = size as u64;
 
         // This value documented in 41.3.
@@ -34,7 +34,7 @@ impl Hasher {
 
         let mut sha256 = sha::Sha256::new();
         sha256.update(&ECREATE.to_le_bytes());
-        sha256.update(&ssa_pages.get().to_le_bytes());
+        sha256.update(&ssa_frame_pages.get().to_le_bytes());
         sha256.update(&size.to_le_bytes());
         sha256.update(&[0u8; 44]); // Reserved
 
