@@ -22,28 +22,17 @@ bitflags::bitflags! {
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
 pub struct Tcs {
-    /// Used to mark an entered TCS.
-    state: u64,
-    /// Execution flags (cleared by EADD)
-    flags: Flags,
-    /// SSA stack offset relative to the enclave base
-    ossa: u64,
-    /// The current SSA frame index (cleared by EADD)
-    cssa: u32,
-    /// The number of frames in the SSA stack
-    nssa: u32,
-    /// Entry point offset relative to the enclave base.
-    oentry: u64,
-    /// Address outside enclave to exit on an exception or interrupt.
-    aep: u64,
-    /// Offset relative to enclave base to become FS segment inside the enclave.
-    ofsbasgx: u64,
-    /// Offset relative to enclave base to become GS segment inside the enclave.
-    ogsbasgx: u64,
-    /// Size to become a new FS-limit (only 32-bit enclaves).
-    fslimit: u32,
-    /// Size to become a new GS-limit (only 32-bit enclaves).
-    gslimit: u32,
+    state: u64,    // Used to mark an entered TCS
+    flags: Flags,  // Execution flags (cleared by EADD)
+    ossa: u64,     // SSA stack offset relative to the enclave base
+    cssa: u32,     // The current SSA frame index (cleared by EADD)
+    nssa: u32,     // The number of frames in the SSA stack
+    oentry: u64,   // Entry point offset relative to the enclave base
+    aep: u64,      // Address outside enclave to exit on an exception or interrupt
+    ofsbasgx: u64, // Offset relative to enclave base to become FS segment inside the enclave
+    ogsbasgx: u64, // Offset relative to enclave base to become GS segment inside the enclave
+    fslimit: u32,  // Size to become a new FS-limit (only 32-bit enclaves)
+    gslimit: u32,  // Size to become a new GS-limit (only 32-bit enclaves)
 }
 
 impl Tcs {
@@ -52,17 +41,17 @@ impl Tcs {
     /// This method takes three parameters.
     ///
     /// 1. `entry` - The offset in the enclave to jump to on enclave entry.
-    /// 2. `ssa` - The offset in the enclave for the SSA frames.
+    /// 2. `ossa` - The offset in the enclave for the SSA frames.
     /// 3. `nssa` - The number of frames at the `ssa` offset.
     ///
     /// Note that while the size of each frame is determined during enclave
     /// creation, each thread (i.e. TCS page) can have a different number of
     /// SSA frames.
-    pub fn new(entry: usize, ssa: usize, nssa: u32) -> Self {
+    pub const fn new(entry: usize, ossa: usize, nssa: u32) -> Self {
         Self {
             state: 0,
             flags: Flags::empty(),
-            ossa: ssa as _,
+            ossa: ossa as _,
             cssa: 0,
             nssa,
             oentry: entry as _,
