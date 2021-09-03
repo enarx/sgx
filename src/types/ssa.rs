@@ -6,11 +6,9 @@
 
 #![allow(clippy::unreadable_literal)]
 
+use core::mem::{size_of, MaybeUninit};
+
 use bitflags::bitflags;
-use core::{
-    mem::{align_of, size_of, MaybeUninit},
-    num::NonZeroU32,
-};
 use primordial::Register;
 use xsave::XSave;
 
@@ -391,15 +389,6 @@ impl StateSaveArea {
         struct Unpadded(XSave, Miscellaneous, Gpr);
 
         size_of::<Unpadded>() - size_of::<XSave>() - size_of::<Miscellaneous>() - size_of::<Gpr>()
-    }
-
-    /// Returns the size of the SSA in 4k pages, rather than bytes. According to
-    /// the documentation, SSAFrameSize (used in SECS) is referenced in pages.
-    /// See section 38.7 for page-size requirement for SECS and Table 38-7 for
-    /// requirement that the SSA is page aligned.
-    pub const fn frame_size() -> NonZeroU32 {
-        let pages = size_of::<StateSaveArea>() / align_of::<StateSaveArea>();
-        unsafe { NonZeroU32::new_unchecked(pages as u32) }
     }
 }
 
