@@ -20,7 +20,7 @@ bitflags::bitflags! {
 ///
 /// Section 38.8
 #[derive(Copy, Clone, Debug)]
-#[repr(C)]
+#[repr(C, align(4096))]
 pub struct Tcs {
     state: u64,    // Used to mark an entered TCS
     flags: Flags,  // Execution flags (cleared by EADD)
@@ -33,6 +33,7 @@ pub struct Tcs {
     ogsbasgx: u64, // Offset relative to enclave base to become GS segment inside the enclave
     fslimit: u32,  // Size to become a new FS-limit (only 32-bit enclaves)
     gslimit: u32,  // Size to become a new GS-limit (only 32-bit enclaves)
+    padding: [u64; 503],
 }
 
 impl Tcs {
@@ -60,13 +61,14 @@ impl Tcs {
             ogsbasgx: 0,
             fslimit: !0,
             gslimit: !0,
+            padding: [0; 503],
         }
     }
 }
 
 #[cfg(test)]
 testaso! {
-    struct Tcs: 8, 72 => {
+    struct Tcs: 4096, 4096 => {
         state: 0,
         flags: 8,
         ossa: 16,
@@ -77,6 +79,7 @@ testaso! {
         ofsbasgx: 48,
         ogsbasgx: 56,
         fslimit: 64,
-        gslimit: 68
+        gslimit: 68,
+        padding: 72
     }
 }
