@@ -14,6 +14,7 @@ use xsave::XSave;
 
 /// Section 38.9.1.1, Table 38-9
 #[repr(u8)]
+#[non_exhaustive]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ExitType {
     /// Hardware
@@ -25,6 +26,7 @@ pub enum ExitType {
 
 /// Exception Error Codes
 #[repr(u8)]
+#[non_exhaustive]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Exception {
     /// Divide-by-zero Error
