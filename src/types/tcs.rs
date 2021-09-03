@@ -2,17 +2,6 @@
 
 //! Thread Control Structure (Section 38.8)
 //! Each executing thread in the enclave is associated with a Thread Control Structure.
-
-bitflags::bitflags! {
-    /// Section 38.8.1
-    #[derive(Default)]
-    #[repr(transparent)]
-    pub struct Flags: u64 {
-        /// Allows debugging features while executing in the enclave on this TCS. Hardware clears this bit on EADD.
-        const DBGOPTIN = 1 << 0;
-    }
-}
-
 /// Thread Control Structure (TCS) is an enclave page visible in its address
 /// space that defines an entry point inside the enclave. A thread enters inside
 /// an enclave by supplying address of TCS to ENCLU(EENTER). A TCS can be entered
@@ -23,7 +12,7 @@ bitflags::bitflags! {
 #[repr(C, align(4096))]
 pub struct Tcs {
     state: u64,    // Used to mark an entered TCS
-    flags: Flags,  // Execution flags (cleared by EADD)
+    flags: u64,    // Execution flags (cleared by EADD)
     ossa: u64,     // SSA stack offset relative to the enclave base
     cssa: u32,     // The current SSA frame index (cleared by EADD)
     nssa: u32,     // The number of frames in the SSA stack
@@ -51,7 +40,7 @@ impl Tcs {
     pub const fn new(entry: usize, ossa: usize, nssa: u32) -> Self {
         Self {
             state: 0,
-            flags: Flags::empty(),
+            flags: 0,
             ossa: ossa as _,
             cssa: 0,
             nssa,
