@@ -109,12 +109,47 @@ mod tests {
     use crate::loader::{Flags, Loader};
     use crate::types::page;
     use crate::types::sig::{Author, Parameters};
-    use crate::types::tcs::Tcs;
 
     use std::num::NonZeroU32;
 
     use openssl::{bn, rsa};
     use primordial::Page;
+
+    #[derive(Copy, Clone, Debug)]
+    #[repr(C, align(4096))]
+    pub struct Tcs {
+        state: u64,    // Used to mark an entered TCS
+        flags: u64,    // Execution flags (cleared by EADD)
+        ossa: u64,     // SSA stack offset relative to the enclave base
+        cssa: u32,     // The current SSA frame index (cleared by EADD)
+        nssa: u32,     // The number of frames in the SSA stack
+        oentry: u64,   // Entry point offset relative to the enclave base
+        aep: u64,      // Address outside enclave to exit on an exception or interrupt
+        ofsbasgx: u64, // Offset relative to enclave base to become FS segment inside the enclave
+        ogsbasgx: u64, // Offset relative to enclave base to become GS segment inside the enclave
+        fslimit: u32,  // Size to become a new FS-limit (only 32-bit enclaves)
+        gslimit: u32,  // Size to become a new GS-limit (only 32-bit enclaves)
+        padding: [u64; 503],
+    }
+
+    impl Tcs {
+        pub const fn new(entry: usize, ossa: usize, nssa: u32) -> Self {
+            Self {
+                state: 0,
+                flags: 0,
+                ossa: ossa as _,
+                cssa: 0,
+                nssa,
+                oentry: entry as _,
+                aep: 0,
+                ofsbasgx: 0,
+                ogsbasgx: 0,
+                fslimit: !0,
+                gslimit: !0,
+                padding: [0; 503],
+            }
+        }
+    }
 
     // Our test enclave will have one code page, followed by one TCS page
     // followed by one SSA page.
