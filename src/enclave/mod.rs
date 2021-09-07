@@ -174,11 +174,12 @@ mod tests {
             .unwrap();
 
         // Add the TCS page.
-        let pages = [Page::copy(Tcs::new(
-            CODE_OFFSET * Page::size(),
-            SSA_OFFSET * Page::size(),
+        let tcs = Tcs::new(
+            CODE_OFFSET * Page::SIZE,
+            SSA_OFFSET * Page::SIZE,
             SSA_COUNT.get(),
-        ))];
+        );
+        let pages = [unsafe { std::mem::transmute(tcs) }; 1];
         let secinfo = page::SecInfo::tcs();
         builder
             .load(pages, TCS_OFFSET, secinfo, Flags::Measure)

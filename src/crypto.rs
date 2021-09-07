@@ -61,12 +61,12 @@ impl Loader for Hasher {
         const EEXTEND: u64 = 0x00444E4554584545;
         const EADD: u64 = 0x0000000044444145;
 
-        let offset = offset * Page::size();
+        let offset = offset * Page::SIZE;
         let flags = flags.into();
 
         // For each page in the input...
         for (i, page) in pages.as_ref().iter().enumerate() {
-            let off = offset + i * Page::size();
+            let off = offset + i * Page::SIZE;
 
             // Hash for the EADD instruction.
             self.0.update(&EADD.to_le_bytes());
@@ -110,11 +110,11 @@ pub(crate) mod test {
     // course, the Intel SGX CPU/microcode/ME. If you can demonstrate a
     // a case where we don't match this, we will happily change our ANSWERs.
 
-    const DATA: [u8; 4096] = [123u8; 4096];
+    const DATA: Page = Page::new([123u8; 4096]);
 
     pub fn hash(input: &[(&[Page], SecInfo)]) -> [u8; 32] {
         // Add the lengths of all the enclave segments to produce enclave size.
-        let size = input.iter().fold(0, |c, x| c + x.0.len() * Page::size());
+        let size = input.iter().fold(0, |c, x| c + x.0.len() * Page::SIZE);
 
         // Inputs:
         //   enclave size: the next power of two beyond our segments
@@ -148,7 +148,7 @@ pub(crate) mod test {
             230, 83, 134, 171, 179, 130, 94, 239, 114, 13, 202, 111, 173, 126, 101, 185, 44, 96,
             129, 56, 92, 7, 246, 99, 17, 85, 245, 207, 201, 9, 51, 65,
         ];
-        let question = hash(&[(&[Page::copy(DATA); 1], SecInfo::tcs())]);
+        let question = hash(&[(&[DATA; 1], SecInfo::tcs())]);
         assert_eq!(question, ANSWER);
     }
 
@@ -158,7 +158,7 @@ pub(crate) mod test {
             0, 117, 112, 212, 9, 215, 100, 12, 99, 30, 102, 236, 187, 103, 39, 144, 251, 33, 191,
             112, 25, 95, 140, 251, 201, 209, 113, 187, 15, 71, 15, 242,
         ];
-        let question = hash(&[(&[Page::copy(DATA); 1], SecInfo::reg(Perms::R))]);
+        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R))]);
         assert_eq!(question, ANSWER);
     }
 
@@ -168,7 +168,7 @@ pub(crate) mod test {
             129, 184, 53, 91, 133, 145, 39, 205, 176, 182, 220, 37, 36, 198, 139, 91, 148, 181, 98,
             116, 22, 122, 174, 173, 173, 59, 39, 209, 165, 47, 8, 219,
         ];
-        let question = hash(&[(&[Page::copy(DATA); 1], SecInfo::reg(Perms::R | Perms::W))]);
+        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R | Perms::W))]);
         assert_eq!(question, ANSWER);
     }
 
@@ -178,10 +178,7 @@ pub(crate) mod test {
             175, 209, 233, 45, 48, 189, 118, 146, 139, 110, 63, 192, 56, 119, 66, 69, 246, 116,
             142, 206, 58, 97, 186, 173, 59, 110, 122, 19, 171, 237, 80, 6,
         ];
-        let question = hash(&[(
-            &[Page::copy(DATA); 1],
-            SecInfo::reg(Perms::R | Perms::W | Perms::X),
-        )]);
+        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R | Perms::W | Perms::X))]);
         assert_eq!(question, ANSWER);
     }
 
@@ -191,7 +188,7 @@ pub(crate) mod test {
             76, 207, 169, 240, 107, 1, 166, 236, 108, 53, 91, 107, 135, 238, 123, 132, 35, 246,
             230, 31, 254, 6, 3, 175, 35, 2, 39, 175, 114, 254, 73, 55,
         ];
-        let question = hash(&[(&[Page::copy(DATA); 1], SecInfo::reg(Perms::R | Perms::X))]);
+        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R | Perms::X))]);
         assert_eq!(question, ANSWER);
     }
 
@@ -202,8 +199,8 @@ pub(crate) mod test {
             190, 9, 245, 27, 16, 85, 173, 17, 90, 43, 124, 46, 84,
         ];
         let question = hash(&[
-            (&[Page::copy(DATA); 1], SecInfo::tcs()),
-            (&[Page::copy(DATA); 2], SecInfo::reg(Perms::R)),
+            (&[DATA; 1], SecInfo::tcs()),
+            (&[DATA; 2], SecInfo::reg(Perms::R)),
         ]);
         assert_eq!(question, ANSWER);
     }
