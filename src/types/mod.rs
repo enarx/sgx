@@ -11,4 +11,3 @@ pub mod page;
 pub mod secs;
 pub mod sig;
 pub mod ssa;
-pub mod tcs;
