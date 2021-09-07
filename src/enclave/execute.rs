@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use std::fmt;
-
 use primordial::{Address, Register};
 
+pub use x86_64::InterruptVector;
+
 use super::Thread;
-use crate::types::ssa::Exception;
 
 /// How to enter an enclave
 #[repr(u32)]
@@ -22,30 +21,19 @@ pub enum Entry {
 /// numbers, which are u8. Therefore, we don't use ExceptionInfo::unused.
 ///
 /// TODO add more comprehensive docs
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct ExceptionInfo {
     /// Last entry type
     pub last: Entry,
 
-    /// Exception error code
-    pub trap: Exception,
+    /// Interrupt vector
+    pub trap: InterruptVector,
 
     /// Trapping code
     pub code: u16,
 
     /// Memory address where exception occurred
     pub addr: Address<u64, ()>,
-}
-
-impl fmt::Debug for ExceptionInfo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ExceptionInfo")
-            .field("last", &self.last)
-            .field("trap", &self.trap)
-            .field("code", &self.code)
-            .field("addr", &self.addr)
-            .finish()
-    }
 }
 
 /// The registers that can be passed to/from the enclave
