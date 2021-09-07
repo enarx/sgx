@@ -172,7 +172,7 @@ impl Loader for Builder {
         secinfo: SecInfo,
         flags: impl Into<flagset::FlagSet<Flags>>,
     ) -> Result<()> {
-        let offset = offset * Page::size();
+        let offset = offset * Page::SIZE;
         let pages = pages.as_ref();
         let flags = flags.into();
 
@@ -188,7 +188,7 @@ impl Loader for Builder {
         // Calculate an absolute span for this region.
         let span = Span {
             start: self.mmap.addr() + offset,
-            count: pages.len() * Page::size(),
+            count: pages.len() * Page::SIZE,
         };
 
         // Save permissions fixups for later.
@@ -197,7 +197,7 @@ impl Loader for Builder {
         // Keep track of TCS pages.
         if secinfo.class == page::Class::Tcs {
             for i in 0..pages.len() {
-                self.tcsp.push(span.start + i * Page::size());
+                self.tcsp.push(span.start + i * Page::SIZE);
             }
         }
 

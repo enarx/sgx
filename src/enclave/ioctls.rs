@@ -182,7 +182,7 @@ mod test {
 
         // Add a TCS page
         let si = SecInfo::tcs();
-        let mut ap = AddPages::new(&page, TCS_OFFSET * Page::size(), &si, flags);
+        let mut ap = AddPages::new(&page, TCS_OFFSET * Page::SIZE, &si, flags);
         ENCLAVE_ADD_PAGES.ioctl(&mut file, &mut ap).unwrap();
         hasher
             .load(&page, TCS_OFFSET, SecInfo::tcs(), flags)
@@ -190,7 +190,7 @@ mod test {
 
         // Add a REG page
         let si = SecInfo::reg(perms);
-        let mut ap = AddPages::new(&page, REG_OFFSET * Page::size(), &si, flags);
+        let mut ap = AddPages::new(&page, REG_OFFSET * Page::SIZE, &si, flags);
         ENCLAVE_ADD_PAGES.ioctl(&mut file, &mut ap).unwrap();
         hasher
             .load(&page, REG_OFFSET, SecInfo::reg(perms), flags)

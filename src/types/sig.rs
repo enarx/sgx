@@ -416,16 +416,16 @@ mod crypto {
         let sig = Signature::read_from(File::open("tests/encl.ss").unwrap()).unwrap();
         let key = loadkey("tests/encl.pem");
 
-        let len = (bin.len() - 1) / Page::size();
+        let len = (bin.len() - 1) / Page::SIZE;
 
         let mut tcs = [Page::default()];
         let mut src = vec![Page::default(); len];
 
         let dst = unsafe { tcs.align_to_mut::<u8>().1 };
-        dst.copy_from_slice(&bin[..Page::size()]);
+        dst.copy_from_slice(&bin[..Page::SIZE]);
 
         let dst = unsafe { src.align_to_mut::<u8>().1 };
-        dst.copy_from_slice(&bin[Page::size()..]);
+        dst.copy_from_slice(&bin[Page::SIZE..]);
 
         // Validate the hash.
         assert_eq!(
