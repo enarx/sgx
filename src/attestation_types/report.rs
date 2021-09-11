@@ -13,15 +13,6 @@ use crate::types::{
 
 use core::{convert::TryFrom, default::Default};
 
-#[cfg(feature = "serialize")]
-use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "serialize")]
-use serde_big_array::big_array;
-
-#[cfg(feature = "serialize")]
-big_array! { BigArray; }
-
 #[derive(Debug, Clone)]
 /// Error type for Report module
 pub struct ReportError;
@@ -29,7 +20,6 @@ pub struct ReportError;
 /// This struct is separated out from the Report to be usable by the Quote struct.
 /// Table 38-21
 #[derive(Clone, Copy)]
-#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[repr(C)]
 pub struct Body {
     /// The security version number of the processor
@@ -67,7 +57,6 @@ pub struct Body {
     reserved3: [u32; 15],
 
     /// Data provided by the user and protected by the Report's MAC (Section 38.15.1)
-    #[cfg_attr(feature = "serialize", serde(with = "BigArray"))]
     pub reportdata: [u8; 64],
 }
 
@@ -183,7 +172,6 @@ impl Body {
 
 /// Table 38-21
 #[derive(Default)]
-#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 #[repr(C, align(512))]
 pub struct Report {
     /// The body of the Report
