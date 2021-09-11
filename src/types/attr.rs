@@ -63,11 +63,13 @@ impl Attributes {
     }
 
     /// Returns features value of Attributes.
+    #[inline]
     pub const fn features(&self) -> Features {
         self.features
     }
 
     /// Returns xfrm value of Attributes.
+    #[inline]
     pub const fn xfrm(&self) -> Xfrm {
         self.xfrm
     }
@@ -76,6 +78,7 @@ impl Attributes {
 impl core::ops::Not for Attributes {
     type Output = Self;
 
+    #[inline]
     fn not(self) -> Self {
         Attributes {
             features: !self.features,
@@ -87,6 +90,7 @@ impl core::ops::Not for Attributes {
 impl core::ops::BitAnd for Attributes {
     type Output = Self;
 
+    #[inline]
     fn bitand(self, other: Self) -> Self {
         Attributes {
             features: self.features & other.features,
@@ -98,6 +102,7 @@ impl core::ops::BitAnd for Attributes {
 impl core::ops::BitOr for Attributes {
     type Output = Self;
 
+    #[inline]
     fn bitor(self, other: Self) -> Self {
         Attributes {
             features: self.features | other.features,
@@ -109,6 +114,7 @@ impl core::ops::BitOr for Attributes {
 impl core::ops::BitXor for Attributes {
     type Output = Self;
 
+    #[inline]
     fn bitxor(self, other: Self) -> Self {
         Attributes {
             features: self.features ^ other.features,
