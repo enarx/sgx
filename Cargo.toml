@@ -28,7 +28,6 @@ std = []
 [dependencies]
 x86_64 = { git = "https://github.com/npmccallum/x86_64", branch = "errors", default-features = false }
 openssl = { version = "0.10", optional = true }
-primordial = { version = "0.3" }
 bitflags = "1.2"
 
 [dev-dependencies]

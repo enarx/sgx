@@ -390,10 +390,10 @@ mod crypto {
 
     use crate::types::page::{Flags as Perms, SecInfo};
 
-    use primordial::Page;
-
     use std::fs::File;
     use std::io::Read;
+
+    const PAGE: usize = 4096;
 
     fn load(path: &str) -> Vec<u8> {
         let mut file = File::open(path).unwrap();
@@ -416,16 +416,14 @@ mod crypto {
         let sig = Signature::read_from(File::open("tests/encl.ss").unwrap()).unwrap();
         let key = loadkey("tests/encl.pem");
 
-        let len = (bin.len() - 1) / Page::SIZE;
-
-        let mut tcs = [Page::default()];
-        let mut src = vec![Page::default(); len];
+        let mut tcs = [0u8; PAGE];
+        let mut src = vec![0u8; (bin.len() - 1) / PAGE * PAGE];
 
         let dst = unsafe { tcs.align_to_mut::<u8>().1 };
-        dst.copy_from_slice(&bin[..Page::SIZE]);
+        dst.copy_from_slice(&bin[..PAGE]);
 
         let dst = unsafe { src.align_to_mut::<u8>().1 };
-        dst.copy_from_slice(&bin[Page::SIZE..]);
+        dst.copy_from_slice(&bin[PAGE..]);
 
         // Validate the hash.
         assert_eq!(
@@ -433,7 +431,8 @@ mod crypto {
             crate::hasher::test::hash(&[
                 (&tcs, SecInfo::tcs()),
                 (&src, SecInfo::reg(Perms::R | Perms::W | Perms::X))
-            ]),
+            ])
+            .unwrap(),
             "failed to produce correct mrenclave hash"
         );
 
