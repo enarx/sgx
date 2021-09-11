@@ -6,27 +6,25 @@
 use bitflags::bitflags;
 
 bitflags! {
-    /// The `Flags` of a page
-    ///
-    /// Section 38.11.1
-    pub struct Flags: u8 {
-        /// The page can be read from inside the enclave.
-        const R = 1 << 0;
+    /// The `Permissions` of a page
+    pub struct Permissions: u8 {
+        /// The page can be read from inside the enclave
+        const READ = 1 << 0;
 
-        /// The page can be written from inside the enclave.
-        const W = 1 << 1;
+        /// The page can be written from inside the enclave
+        const WRITE = 1 << 1;
 
-        /// The page can be executed from inside the enclave.
-        const X = 1 << 2;
+        /// The page can be executed from inside the enclave
+        const EXECUTE = 1 << 2;
 
-        /// The page is in the PENDING state.
+        /// The page is in the PENDING state
         const PENDING = 1 << 3;
 
-        /// The page is in the MODIFIED state.
+        /// The page is in the MODIFIED state
         const MODIFIED = 1 << 4;
 
-        /// A permission restriction operation on the page is in progress.
-        const PR = 1 << 5;
+        /// A permission restriction operation on the page is in progress
+        const RESTRICTED = 1 << 5;
     }
 }
 
@@ -60,10 +58,12 @@ pub enum Class {
 #[derive(Copy, Clone)]
 #[repr(C, align(64))]
 pub struct SecInfo {
-    /// Section 38.11.1
-    pub flags: Flags,
-    /// Section 38.11.2
+    /// The permissions of the page
+    pub perms: Permissions,
+
+    /// The type of the page
     pub class: Class,
+
     reserved: [u16; 31],
 }
 
@@ -71,16 +71,16 @@ impl core::fmt::Debug for SecInfo {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("SecInfo")
             .field("class", &self.class)
-            .field("flags", &self.flags)
+            .field("perms", &self.perms)
             .finish()
     }
 }
 
 impl SecInfo {
     /// Creates a SecInfo (page) of class type Regular.
-    pub const fn reg(flags: Flags) -> Self {
+    pub const fn reg(perms: Permissions) -> Self {
         Self {
-            flags,
+            perms,
             class: Class::Reg,
             reserved: [0; 31],
         }
@@ -89,7 +89,7 @@ impl SecInfo {
     /// Creates a SecInfo (page) of class type TCS.
     pub const fn tcs() -> Self {
         Self {
-            flags: Flags::empty(),
+            perms: Permissions::empty(),
             class: Class::Tcs,
             reserved: [0; 31],
         }
@@ -99,7 +99,7 @@ impl SecInfo {
 #[cfg(test)]
 testaso! {
     struct SecInfo: 64, 64 => {
-        flags: 0,
+        perms: 0,
         class: 1
     }
 }
