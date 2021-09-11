@@ -36,10 +36,8 @@ impl Secs {
     pub fn new(
         span: Span<usize, usize>,
         ssa_frame_pages: NonZeroU32,
-        parameters: impl Into<Option<Parameters>>,
+        parameters: Parameters,
     ) -> Self {
-        let parameters = parameters.into().unwrap_or_default();
-
         Self {
             size: span.count as _,
             baseaddr: span.start as _,
