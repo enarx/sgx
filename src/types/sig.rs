@@ -105,19 +105,19 @@ impl Author {
     }
 }
 
-/// The enclave parameters
+/// Enclave parameters
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Parameters {
-    /// Bit vector specifying extended SSA frame feature set to be used.
+    /// Fault information to display in the MISC section of the SSA
     pub misc: Masked<MiscSelect>,
 
-    /// Enclave attributes struct.
+    /// Enclave attributes
     pub attr: Masked<Attributes>,
 
-    /// User-defined value used in key derivation.
+    /// ISV-defined product identifier
     pub isv_prod_id: isv::ProdId,
 
-    /// User-defined value used in key derivation.
+    /// ISV-defined security version number
     pub isv_svn: isv::Svn,
 }
 
