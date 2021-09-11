@@ -97,7 +97,7 @@ impl Hasher {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use crate::types::page::{Flags as Perms, SecInfo};
+    use crate::types::page::{Permissions, SecInfo};
 
     // A NOTE ABOUT THIS TESTING METHODOLOGY
     //
@@ -166,7 +166,7 @@ pub(crate) mod test {
             0, 117, 112, 212, 9, 215, 100, 12, 99, 30, 102, 236, 187, 103, 39, 144, 251, 33, 191,
             112, 25, 95, 140, 251, 201, 209, 113, 187, 15, 71, 15, 242,
         ];
-        let question = hash(&[(&DATA, SecInfo::reg(Perms::R))]);
+        let question = hash(&[(&DATA, SecInfo::reg(Permissions::READ))]);
         assert_eq!(question, Ok(ANSWER));
     }
 
@@ -176,7 +176,7 @@ pub(crate) mod test {
             129, 184, 53, 91, 133, 145, 39, 205, 176, 182, 220, 37, 36, 198, 139, 91, 148, 181, 98,
             116, 22, 122, 174, 173, 173, 59, 39, 209, 165, 47, 8, 219,
         ];
-        let question = hash(&[(&DATA, SecInfo::reg(Perms::R | Perms::W))]);
+        let question = hash(&[(&DATA, SecInfo::reg(Permissions::READ | Permissions::WRITE))]);
         assert_eq!(question, Ok(ANSWER));
     }
 
@@ -186,7 +186,10 @@ pub(crate) mod test {
             175, 209, 233, 45, 48, 189, 118, 146, 139, 110, 63, 192, 56, 119, 66, 69, 246, 116,
             142, 206, 58, 97, 186, 173, 59, 110, 122, 19, 171, 237, 80, 6,
         ];
-        let question = hash(&[(&DATA, SecInfo::reg(Perms::R | Perms::W | Perms::X))]);
+        let question = hash(&[(
+            &DATA,
+            SecInfo::reg(Permissions::READ | Permissions::WRITE | Permissions::EXECUTE),
+        )]);
         assert_eq!(question, Ok(ANSWER));
     }
 
@@ -196,7 +199,10 @@ pub(crate) mod test {
             76, 207, 169, 240, 107, 1, 166, 236, 108, 53, 91, 107, 135, 238, 123, 132, 35, 246,
             230, 31, 254, 6, 3, 175, 35, 2, 39, 175, 114, 254, 73, 55,
         ];
-        let question = hash(&[(&DATA, SecInfo::reg(Perms::R | Perms::X))]);
+        let question = hash(&[(
+            &DATA,
+            SecInfo::reg(Permissions::READ | Permissions::EXECUTE),
+        )]);
         assert_eq!(question, Ok(ANSWER));
     }
 
@@ -207,7 +213,10 @@ pub(crate) mod test {
             233, 11, 17, 35, 117, 163, 196, 106, 142, 137, 169, 130, 108, 108, 51, 5, 29, 241, 152,
             190, 9, 245, 27, 16, 85, 173, 17, 90, 43, 124, 46, 84,
         ];
-        let question = hash(&[(&DATA, SecInfo::tcs()), (&LONG, SecInfo::reg(Perms::R))]);
+        let question = hash(&[
+            (&DATA, SecInfo::tcs()),
+            (&LONG, SecInfo::reg(Permissions::READ)),
+        ]);
         assert_eq!(question, Ok(ANSWER));
     }
 }

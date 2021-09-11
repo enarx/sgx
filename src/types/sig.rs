@@ -388,7 +388,7 @@ mod author {
 mod crypto {
     use super::*;
 
-    use crate::types::page::{Flags as Perms, SecInfo};
+    use crate::types::page::{Permissions, SecInfo};
 
     use std::fs::File;
     use std::io::Read;
@@ -426,13 +426,11 @@ mod crypto {
         dst.copy_from_slice(&bin[PAGE..]);
 
         // Validate the hash.
+        let rwx = Permissions::READ | Permissions::WRITE | Permissions::EXECUTE;
         assert_eq!(
             sig.measurement().mrenclave(),
-            crate::hasher::test::hash(&[
-                (&tcs, SecInfo::tcs()),
-                (&src, SecInfo::reg(Perms::R | Perms::W | Perms::X))
-            ])
-            .unwrap(),
+            crate::hasher::test::hash(&[(&tcs, SecInfo::tcs()), (&src, SecInfo::reg(rwx))])
+                .unwrap(),
             "failed to produce correct mrenclave hash"
         );
 
