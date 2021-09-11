@@ -11,9 +11,14 @@ use crate::types::sig::Parameters;
 use crate::types::{page::SecInfo, sig};
 
 use openssl::sha;
-use primordial::Page;
 
 use std::num::NonZeroU32;
+
+const PAGE: usize = 4096;
+
+/// Input length is not a multiple of the page size
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct InvalidSize;
 
 /// This struct creates and updates the MRENCLAVE value associated
 /// with an enclave's Signature (or SIGSTRUCT). This value is updated with
@@ -43,40 +48,44 @@ impl Hasher {
     /// Hashes pages as if they were loaded via EADD/EEXTEND
     pub fn load(
         &mut self,
-        pages: impl AsRef<[Page]>,
-        offset: usize,
+        pages: &[u8],
+        mut offset: usize,
         secinfo: SecInfo,
         measure: bool,
-    ) {
+    ) -> Result<(), InvalidSize> {
         // These values documented in 41.3.
         const EEXTEND: u64 = 0x00444E4554584545;
         const EADD: u64 = 0x0000000044444145;
 
-        let offset = offset * Page::SIZE;
+        if pages.len() % PAGE != 0 {
+            return Err(InvalidSize);
+        }
 
         // For each page in the input...
-        for (i, page) in pages.as_ref().iter().enumerate() {
-            let off = offset + i * Page::SIZE;
-
+        for page in pages.chunks(PAGE) {
             // Hash for the EADD instruction.
             self.0.update(&EADD.to_le_bytes());
-            self.0.update(&(off as u64).to_le_bytes());
+            self.0.update(&(offset as u64).to_le_bytes());
             self.0.update(unsafe {
                 std::slice::from_raw_parts(&secinfo as *const _ as *const u8, 48)
             });
 
             // Hash for the EEXTEND instruction.
             if measure {
-                for (j, segment) in page.as_ref().chunks(256).enumerate() {
-                    let off = off + j * 256;
-
+                let mut off = offset;
+                for segment in page.chunks(256) {
                     self.0.update(&EEXTEND.to_le_bytes());
                     self.0.update(&(off as u64).to_le_bytes());
                     self.0.update(&[0u8; 48]);
                     self.0.update(segment);
+                    off += segment.len();
                 }
             }
+
+            offset += page.len();
         }
+
+        Ok(())
     }
 
     /// Produces MRENCLAVE value by hashing with SHA256.
@@ -103,11 +112,11 @@ pub(crate) mod test {
     // course, the Intel SGX CPU/microcode/ME. If you can demonstrate a
     // a case where we don't match this, we will happily change our ANSWERs.
 
-    const DATA: Page = Page::new([123u8; 4096]);
+    const DATA: [u8; PAGE] = [123u8; PAGE];
 
-    pub fn hash(input: &[(&[Page], SecInfo)]) -> [u8; 32] {
+    pub fn hash(input: &[(&[u8], SecInfo)]) -> Result<[u8; 32], InvalidSize> {
         // Add the lengths of all the enclave segments to produce enclave size.
-        let size = input.iter().fold(0, |c, x| c + x.0.len() * Page::SIZE);
+        let size = input.iter().fold(0, |c, x| c + x.0.len());
 
         // Inputs:
         //   enclave size: the next power of two beyond our segments
@@ -117,12 +126,18 @@ pub(crate) mod test {
 
         let mut off = 0;
         for i in input {
-            hasher.load(i.0, off, i.1, true);
+            hasher.load(i.0, off, i.1, true)?;
             off += i.0.len();
         }
 
         // Use default signature parameters
-        hasher.finish().mrenclave()
+        Ok(hasher.finish().mrenclave())
+    }
+
+    #[test]
+    fn badsize() {
+        let question = hash(&[(&[1u8, 2, 3, 4], SecInfo::tcs())]);
+        assert_eq!(question, Err(InvalidSize));
     }
 
     #[test]
@@ -132,7 +147,7 @@ pub(crate) mod test {
             72, 202, 97, 25, 204, 94, 10, 197, 188, 89, 246, 246,
         ];
         let question = hash(&[]);
-        assert_eq!(question, ANSWER);
+        assert_eq!(question, Ok(ANSWER));
     }
 
     #[test]
@@ -141,8 +156,8 @@ pub(crate) mod test {
             230, 83, 134, 171, 179, 130, 94, 239, 114, 13, 202, 111, 173, 126, 101, 185, 44, 96,
             129, 56, 92, 7, 246, 99, 17, 85, 245, 207, 201, 9, 51, 65,
         ];
-        let question = hash(&[(&[DATA; 1], SecInfo::tcs())]);
-        assert_eq!(question, ANSWER);
+        let question = hash(&[(&DATA, SecInfo::tcs())]);
+        assert_eq!(question, Ok(ANSWER));
     }
 
     #[test]
@@ -151,8 +166,8 @@ pub(crate) mod test {
             0, 117, 112, 212, 9, 215, 100, 12, 99, 30, 102, 236, 187, 103, 39, 144, 251, 33, 191,
             112, 25, 95, 140, 251, 201, 209, 113, 187, 15, 71, 15, 242,
         ];
-        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R))]);
-        assert_eq!(question, ANSWER);
+        let question = hash(&[(&DATA, SecInfo::reg(Perms::R))]);
+        assert_eq!(question, Ok(ANSWER));
     }
 
     #[test]
@@ -161,8 +176,8 @@ pub(crate) mod test {
             129, 184, 53, 91, 133, 145, 39, 205, 176, 182, 220, 37, 36, 198, 139, 91, 148, 181, 98,
             116, 22, 122, 174, 173, 173, 59, 39, 209, 165, 47, 8, 219,
         ];
-        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R | Perms::W))]);
-        assert_eq!(question, ANSWER);
+        let question = hash(&[(&DATA, SecInfo::reg(Perms::R | Perms::W))]);
+        assert_eq!(question, Ok(ANSWER));
     }
 
     #[test]
@@ -171,8 +186,8 @@ pub(crate) mod test {
             175, 209, 233, 45, 48, 189, 118, 146, 139, 110, 63, 192, 56, 119, 66, 69, 246, 116,
             142, 206, 58, 97, 186, 173, 59, 110, 122, 19, 171, 237, 80, 6,
         ];
-        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R | Perms::W | Perms::X))]);
-        assert_eq!(question, ANSWER);
+        let question = hash(&[(&DATA, SecInfo::reg(Perms::R | Perms::W | Perms::X))]);
+        assert_eq!(question, Ok(ANSWER));
     }
 
     #[test]
@@ -181,20 +196,18 @@ pub(crate) mod test {
             76, 207, 169, 240, 107, 1, 166, 236, 108, 53, 91, 107, 135, 238, 123, 132, 35, 246,
             230, 31, 254, 6, 3, 175, 35, 2, 39, 175, 114, 254, 73, 55,
         ];
-        let question = hash(&[(&[DATA; 1], SecInfo::reg(Perms::R | Perms::X))]);
-        assert_eq!(question, ANSWER);
+        let question = hash(&[(&DATA, SecInfo::reg(Perms::R | Perms::X))]);
+        assert_eq!(question, Ok(ANSWER));
     }
 
     #[test]
     fn long() {
+        const LONG: [u8; PAGE * 2] = [123u8; PAGE * 2];
         const ANSWER: [u8; 32] = [
             233, 11, 17, 35, 117, 163, 196, 106, 142, 137, 169, 130, 108, 108, 51, 5, 29, 241, 152,
             190, 9, 245, 27, 16, 85, 173, 17, 90, 43, 124, 46, 84,
         ];
-        let question = hash(&[
-            (&[DATA; 1], SecInfo::tcs()),
-            (&[DATA; 2], SecInfo::reg(Perms::R)),
-        ]);
-        assert_eq!(question, ANSWER);
+        let question = hash(&[(&DATA, SecInfo::tcs()), (&LONG, SecInfo::reg(Perms::R))]);
+        assert_eq!(question, Ok(ANSWER));
     }
 }
