@@ -73,9 +73,24 @@ macro_rules! testaso {
     };
 }
 
-#[cfg(feature = "crypto")]
-pub mod hasher;
-
 //pub mod attestation_types;
 
-pub mod types;
+mod attr;
+mod isv;
+mod misc;
+mod page;
+mod secs;
+mod sig;
+
+#[cfg(feature = "crypto")]
+mod hasher;
+
+pub use attr::{Attributes, Features, Xfrm};
+pub use isv::{ProdId, Svn};
+pub use misc::MiscSelect;
+pub use page::{Class, Permissions, SecInfo};
+pub use secs::Secs;
+pub use sig::{Author, Masked, Measurement, Parameters, Signature};
+
+#[cfg(feature = "crypto")]
+pub use hasher::{Hasher, InvalidSize};

@@ -7,8 +7,7 @@
 #![cfg(feature = "crypto")]
 #![allow(clippy::unreadable_literal)]
 
-use crate::types::sig::Parameters;
-use crate::types::{page::SecInfo, sig};
+use crate::{Measurement, Parameters, SecInfo};
 
 use openssl::sha;
 
@@ -89,7 +88,7 @@ impl Hasher {
     }
 
     /// Produces MRENCLAVE value by hashing with SHA256.
-    pub fn finish(self) -> sig::Measurement {
+    pub fn finish(self) -> Measurement {
         self.1.measurement(self.0.finish())
     }
 }
@@ -97,7 +96,7 @@ impl Hasher {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use crate::types::page::{Permissions, SecInfo};
+    use crate::{Permissions, SecInfo};
 
     // A NOTE ABOUT THIS TESTING METHODOLOGY
     //
