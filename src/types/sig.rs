@@ -430,7 +430,7 @@ mod crypto {
         // Validate the hash.
         assert_eq!(
             sig.measurement().mrenclave(),
-            crate::crypto::test::hash(&[
+            crate::hasher::test::hash(&[
                 (&tcs, SecInfo::tcs()),
                 (&src, SecInfo::reg(Perms::R | Perms::W | Perms::X))
             ]),
