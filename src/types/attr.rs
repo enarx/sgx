@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 bitflags::bitflags! {
     /// Section 38.7.1.
     #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
-    pub struct Flags: u64 {
+    pub struct Features: u64 {
         /// Enclave has been initialized by EINIT.
         const INIT = 1 << 0;
         /// Perm for debugger to r/w enclave data with EDBGRD and EDBGWR.
@@ -27,7 +27,7 @@ bitflags::bitflags! {
     }
 }
 
-impl Default for Flags {
+impl Default for Features {
     fn default() -> Self {
         Self::BIT64
     }
@@ -73,14 +73,14 @@ impl Default for Xfrm {
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct Attributes {
-    flags: Flags,
+    features: Features,
     xfrm: Xfrm,
 }
 
-impl From<Flags> for Attributes {
-    fn from(value: Flags) -> Self {
+impl From<Features> for Attributes {
+    fn from(value: Features) -> Self {
         Self {
-            flags: value,
+            features: value,
             xfrm: Default::default(),
         }
     }
@@ -89,21 +89,21 @@ impl From<Flags> for Attributes {
 impl From<Xfrm> for Attributes {
     fn from(value: Xfrm) -> Self {
         Self {
-            flags: Default::default(),
+            features: Default::default(),
             xfrm: value,
         }
     }
 }
 
 impl Attributes {
-    /// Creates new Attributes struct from Flags and Xfrm.
-    pub const fn new(flags: Flags, xfrm: Xfrm) -> Self {
-        Self { flags, xfrm }
+    /// Creates new Attributes struct from Features and Xfrm.
+    pub const fn new(features: Features, xfrm: Xfrm) -> Self {
+        Self { features, xfrm }
     }
 
-    /// Returns flags value of Attributes.
-    pub const fn flags(&self) -> Flags {
-        self.flags
+    /// Returns features value of Attributes.
+    pub const fn features(&self) -> Features {
+        self.features
     }
 
     /// Returns xfrm value of Attributes.
@@ -117,7 +117,7 @@ impl core::ops::Not for Attributes {
 
     fn not(self) -> Self {
         Attributes {
-            flags: !self.flags,
+            features: !self.features,
             xfrm: !self.xfrm,
         }
     }
@@ -128,7 +128,7 @@ impl core::ops::BitAnd for Attributes {
 
     fn bitand(self, other: Self) -> Self {
         Attributes {
-            flags: self.flags & other.flags,
+            features: self.features & other.features,
             xfrm: self.xfrm & other.xfrm,
         }
     }
@@ -139,7 +139,7 @@ impl core::ops::BitOr for Attributes {
 
     fn bitor(self, other: Self) -> Self {
         Attributes {
-            flags: self.flags | other.flags,
+            features: self.features | other.features,
             xfrm: self.xfrm | other.xfrm,
         }
     }
@@ -150,7 +150,7 @@ impl core::ops::BitXor for Attributes {
 
     fn bitxor(self, other: Self) -> Self {
         Attributes {
-            flags: self.flags ^ other.flags,
+            features: self.features ^ other.features,
             xfrm: self.xfrm ^ other.xfrm,
         }
     }
