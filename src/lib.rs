@@ -94,3 +94,16 @@ pub use sig::{Author, Masked, Measurement, Parameters, Signature};
 
 #[cfg(feature = "crypto")]
 pub use hasher::{Hasher, InvalidSize};
+
+/// SGX ENCLU Leaf Instructions
+#[allow(missing_docs)]
+pub mod leaf {
+    pub const EREPORT: usize = 0x00;
+    pub const EGETKEY: usize = 0x01;
+    pub const EENTER: usize = 0x02;
+    pub const ERESUME: usize = 0x03;
+    pub const EEXIT: usize = 0x04;
+    pub const EACCEPT: usize = 0x05;
+    pub const EMODPE: usize = 0x06;
+    pub const EACCEPTCOPY: usize = 0x07;
+}
