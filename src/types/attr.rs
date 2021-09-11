@@ -6,22 +6,34 @@
 pub use x86_64::registers::xcontrol::XCr0Flags as Xfrm;
 
 bitflags::bitflags! {
-    /// Section 38.7.1.
+    /// Expresses the non-XSAVE related enclave features
     #[derive(Default)]
     pub struct Features: u64 {
-        /// Enclave has been initialized by EINIT.
+        /// Enclave has been initialized by EINIT
+        ///
+        /// Note that this flag MUST be cleared when loading the enclave and,
+        /// conversly, MUST be set when validating an attestation.
         const INIT = 1 << 0;
-        /// Perm for debugger to r/w enclave data with EDBGRD and EDBGWR.
+
+        /// Enables enclave debug mode
+        ///
+        /// This gives permission to use EDBGRD and EDBGWR to read and write
+        /// enclave memory as plaintext, respectively.
         const DEBUG = 1 << 1;
-        /// Enclave runs in 64-bit mode.
-        const BIT64 = 1 << 2;
-        /// Provisioning Key is available from EGETKEY.
-        const PROV_KEY = 1 << 4;
-        /// EINIT token key is available from EGETKEY.
+
+        /// Enables enclave 64-bit mode
+        const MODE64BIT = 1 << 2;
+
+        /// Enables use of the provisioning key via EGETKEY
+        const PROVISIONING_KEY = 1 << 4;
+
+        /// Enables use of the EINIT token key via EGETKEY
         const EINIT_KEY = 1 << 5;
-        /// Enable CET attributes.
+
+        /// Enables CET attributes
         const CET = 1 << 6;
-        /// Key Separation and Sharing enabled.
+
+        /// Enables key separation and sharing
         const KSS = 1 << 7;
     }
 }
