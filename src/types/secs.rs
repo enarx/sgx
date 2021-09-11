@@ -9,7 +9,6 @@
 
 use super::{attr, isv, misc::MiscSelect, sig::Parameters};
 use core::num::{NonZeroU32, NonZeroUsize};
-use lset::Span;
 
 /// Section 38.7
 #[derive(Copy, Clone, Debug)]
@@ -34,13 +33,14 @@ pub struct Secs {
 impl Secs {
     /// Creates a new SECS struct based on a base address and spec.
     pub fn new(
-        span: Span<usize, usize>,
+        addr: *const (),
+        size: usize,
         ssa_frame_pages: NonZeroU32,
         parameters: Parameters,
     ) -> Self {
         Self {
-            size: span.count as _,
-            baseaddr: span.start as _,
+            size: size as u64,
+            baseaddr: addr as u64,
             ssaframesize: ssa_frame_pages,
             miscselect: parameters.misc.data & parameters.misc.mask,
             reserved0: [0; 24],
