@@ -3,12 +3,11 @@
 //! Attributes (Section 38.7.1)
 //! The attributes of an enclave are specified by the struct below as described.
 
-#[cfg(feature = "serialize")]
-use serde::{Deserialize, Serialize};
+pub use x86_64::registers::xcontrol::XCr0Flags as Xfrm;
 
 bitflags::bitflags! {
     /// Section 38.7.1.
-    #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+    #[derive(Default)]
     pub struct Features: u64 {
         /// Enclave has been initialized by EINIT.
         const INIT = 1 << 0;
@@ -27,70 +26,20 @@ bitflags::bitflags! {
     }
 }
 
-impl Default for Features {
-    fn default() -> Self {
-        Self::BIT64
-    }
-}
-
-bitflags::bitflags! {
-    /// Section 42.7.2.1; more info can be found at https://en.wikipedia.org/wiki/Control_register.
-    #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
-    pub struct Xfrm: u64 {
-        /// x87 FPU/MMX State, note, must be '1'.
-        const X87 = 1 << 0;
-        /// XSAVE feature set enable for MXCSR and XMM regs.
-        const SSE = 1 << 1;
-        /// AVX enable and XSAVE feature set can be used to manage YMM regs.
-        const AVX = 1 << 2;
-        /// MPX enable and XSAVE feature set can be used for BND regs.
-        const BNDREG = 1 << 3;
-        /// PMX enable and XSAVE feature set can be used for BNDCFGU and BNDSTATUS regs.
-        const BNDCSR =  1 << 4;
-        /// AVX-512 enable and XSAVE feature set can be used for AVX opmask, AKA k-mask, regs.
-        const OPMASK = 1 << 5;
-        /// AVX-512 enable and XSAVE feature set can be used for upper-halves of the lower ZMM regs.
-        const ZMM_HI256 = 1 << 6;
-        /// AVX-512 enable and XSAVE feature set can be used for the upper ZMM regs.
-        const HI16_ZMM = 1 << 7;
-        /// XSAVE feature set can be used for PKRU register (part of protection keys mechanism).
-        const PKRU = 1 << 9;
-        /// Control-flow Enforcement Technology (CET) user state.
-        const CETU = 1 << 11;
-        /// Control-flow Enforcement Technology (CET) supervisor state.
-        const CETS = 1 << 12;
-    }
-}
-
-impl Default for Xfrm {
-    fn default() -> Self {
-        Self::X87 | Self::SSE
-    }
-}
-
 /// Section 38.7.1.
 #[repr(C, packed(4))]
-#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Attributes {
     features: Features,
     xfrm: Xfrm,
 }
 
-impl From<Features> for Attributes {
-    fn from(value: Features) -> Self {
+impl Default for Attributes {
+    #[inline]
+    fn default() -> Self {
         Self {
-            features: value,
-            xfrm: Default::default(),
-        }
-    }
-}
-
-impl From<Xfrm> for Attributes {
-    fn from(value: Xfrm) -> Self {
-        Self {
-            features: Default::default(),
-            xfrm: value,
+            features: Features::default(),
+            xfrm: Xfrm::empty(),
         }
     }
 }
