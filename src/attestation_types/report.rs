@@ -6,7 +6,7 @@
 #![allow(missing_docs)]
 
 use crate::types::{
-    attr::{Attributes, Flags, Xfrm},
+    attr::{Attributes, Features, Xfrm},
     isv,
     misc::MiscSelect,
 };
@@ -106,7 +106,7 @@ impl TryFrom<&[u8; 384]> for Body {
         f.copy_from_slice(&bytes[48..56]);
         x.copy_from_slice(&bytes[56..64]);
 
-        let f = match Flags::from_bits(u64::from_le_bytes(f)) {
+        let f = match Features::from_bits(u64::from_le_bytes(f)) {
             Some(f) => f,
             None => {
                 return Err(ReportError);
