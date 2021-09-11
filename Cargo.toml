@@ -30,7 +30,6 @@ x86_64 = { git = "https://github.com/npmccallum/x86_64", branch = "errors", defa
 openssl = { version = "0.10", optional = true }
 primordial = { version = "0.3" }
 bitflags = "1.2"
-flagset = "0.4"
 
 [dev-dependencies]
 rstest = "0.11"

@@ -7,7 +7,6 @@
 #![cfg(feature = "crypto")]
 #![allow(clippy::unreadable_literal)]
 
-use crate::loader::{Flags, Loader};
 use crate::types::sig::Parameters;
 use crate::types::{page::SecInfo, sig};
 
@@ -41,28 +40,19 @@ impl Hasher {
         Self(sha256, parameters)
     }
 
-    /// Produces MRENCLAVE value by hashing with SHA256.
-    pub fn finish(self) -> sig::Measurement {
-        self.1.measurement(self.0.finish())
-    }
-}
-
-impl Loader for Hasher {
-    type Error = std::convert::Infallible;
-
-    fn load(
+    /// Hashes pages as if they were loaded via EADD/EEXTEND
+    pub fn load(
         &mut self,
         pages: impl AsRef<[Page]>,
         offset: usize,
         secinfo: SecInfo,
-        flags: impl Into<flagset::FlagSet<crate::loader::Flags>>,
-    ) -> Result<(), Self::Error> {
+        measure: bool,
+    ) {
         // These values documented in 41.3.
         const EEXTEND: u64 = 0x00444E4554584545;
         const EADD: u64 = 0x0000000044444145;
 
         let offset = offset * Page::SIZE;
-        let flags = flags.into();
 
         // For each page in the input...
         for (i, page) in pages.as_ref().iter().enumerate() {
@@ -76,7 +66,7 @@ impl Loader for Hasher {
             });
 
             // Hash for the EEXTEND instruction.
-            if flags.contains(Flags::Measure) {
+            if measure {
                 for (j, segment) in page.as_ref().chunks(256).enumerate() {
                     let off = off + j * 256;
 
@@ -87,8 +77,11 @@ impl Loader for Hasher {
                 }
             }
         }
+    }
 
-        Ok(())
+    /// Produces MRENCLAVE value by hashing with SHA256.
+    pub fn finish(self) -> sig::Measurement {
+        self.1.measurement(self.0.finish())
     }
 }
 
@@ -124,7 +117,7 @@ pub(crate) mod test {
 
         let mut off = 0;
         for i in input {
-            hasher.load(i.0, off, i.1, Flags::Measure).unwrap();
+            hasher.load(i.0, off, i.1, true);
             off += i.0.len();
         }
 

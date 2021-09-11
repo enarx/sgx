@@ -79,5 +79,3 @@ pub mod hasher;
 //pub mod attestation_types;
 
 pub mod types;
-
-pub mod loader;
