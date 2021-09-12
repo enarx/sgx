@@ -6,14 +6,14 @@
 /// ISV assigned Product ID.
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-pub struct ProdId(u16);
+pub struct ProductId(u16);
 
 /// ISV assigned SVN (security version number).
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-pub struct Svn(u16);
+pub struct SecurityVersion(u16);
 
-impl ProdId {
+impl ProductId {
     /// Creates a new ProdId based on value provided.
     pub const fn new(prod_id: u16) -> Self {
         Self(prod_id)
@@ -25,7 +25,7 @@ impl ProdId {
     }
 }
 
-impl Svn {
+impl SecurityVersion {
     /// Creates a new Svn based on value provided.
     pub const fn new(svn: u16) -> Self {
         Self(svn)

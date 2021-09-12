@@ -5,7 +5,7 @@
 //! contains information about the enclave. SIGSTRUCT is processed by the EINIT
 //! leaf function to verify that the enclave was properly built.
 
-use crate::{Attributes, MiscSelect, ProdId, Svn};
+use crate::{Attributes, MiscSelect, ProductId, SecurityVersion};
 
 use core::fmt::Debug;
 use core::ops::{BitAnd, BitOr, Not};
@@ -115,10 +115,10 @@ pub struct Parameters {
     pub attr: Masked<Attributes>,
 
     /// ISV-defined product identifier
-    pub isv_prod_id: ProdId,
+    pub isv_prod_id: ProductId,
 
     /// ISV-defined security version number
-    pub isv_svn: Svn,
+    pub isv_svn: SecurityVersion,
 }
 
 impl Parameters {
@@ -149,8 +149,8 @@ pub struct Measurement {
     attr: Masked<Attributes>,
     mrenclave: [u8; 32],
     reserved1: [u8; 32],
-    isv_prod_id: ProdId,
-    isv_svn: Svn,
+    isv_prod_id: ProductId,
+    isv_svn: SecurityVersion,
 }
 
 impl Measurement {

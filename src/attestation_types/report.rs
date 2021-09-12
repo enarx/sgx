@@ -5,11 +5,7 @@
 
 #![allow(missing_docs)]
 
-use crate::types::{
-    attr::{Attributes, Features, Xfrm},
-    isv,
-    misc::MiscSelect,
-};
+use crate::{Attributes, Features, MiscSelect, ProductId, SecurityVersion, Xfrm};
 
 use core::{convert::TryFrom, default::Default};
 
@@ -48,10 +44,10 @@ pub struct Body {
     reserved2: [u32; 24],
 
     /// Product ID of the enclave
-    pub isvprodid: isv::ProdId,
+    pub isv_prod_id: ProductId,
 
     /// Security version number of the enclave
-    pub isvsvn: isv::Svn,
+    pub isv_svn: SecurityVersion,
 
     /// Reserved
     reserved3: [u32; 15],
@@ -71,8 +67,8 @@ impl Default for Body {
             reserved1: <[u32; 8]>::default(),
             mrsigner: <[u8; 32]>::default(),
             reserved2: <[u32; 24]>::default(),
-            isvprodid: isv::ProdId::default(),
-            isvsvn: isv::Svn::default(),
+            isv_prod_id: ProductId::default(),
+            isv_svn: SecurityVersion::default(),
             reserved3: <[u32; 15]>::default(),
             reportdata: [0u8; 64],
         }
@@ -119,11 +115,11 @@ impl TryFrom<&[u8; 384]> for Body {
 
         let mut prodid = [0u8; 2];
         prodid.copy_from_slice(&bytes[256..258]);
-        let isvprodid = isv::ProdId::new(u16::from_le_bytes(prodid));
+        let isv_prod_id = ProductId::new(u16::from_le_bytes(prodid));
 
         let mut svn = [0u8; 2];
         svn.copy_from_slice(&bytes[258..260]);
-        let isvsvn = isv::Svn::new(u16::from_le_bytes(svn));
+        let isv_svn = SecurityVersion::new(u16::from_le_bytes(svn));
 
         let mut reportdata = [0u8; 64];
         reportdata.copy_from_slice(&bytes[320..384]);
@@ -134,8 +130,8 @@ impl TryFrom<&[u8; 384]> for Body {
             attributes,
             mrenclave,
             mrsigner,
-            isvprodid,
-            isvsvn,
+            isv_prod_id,
+            isv_svn,
             reportdata,
             ..Default::default()
         })
@@ -162,8 +158,8 @@ impl Body {
         vec.extend_from_slice(res1);
         vec.extend(&self.mrsigner);
         vec.extend_from_slice(res2);
-        vec.extend(&self.isvprodid.inner().to_le_bytes());
-        vec.extend(&self.isvsvn.inner().to_le_bytes());
+        vec.extend(&self.isv_prod_id.inner().to_le_bytes());
+        vec.extend(&self.isv_svn.inner().to_le_bytes());
         vec.extend_from_slice(res3);
         vec.extend_from_slice(reportdata);
         vec
@@ -198,8 +194,8 @@ testaso! {
         reserved1: 96,
         mrsigner: 128,
         reserved2: 160,
-        isvprodid: 256,
-        isvsvn: 258,
+        isv_prod_id: 256,
+        isv_svn: 258,
         reserved3: 260,
         reportdata: 320
     }
