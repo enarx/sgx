@@ -24,8 +24,8 @@ pub struct Secs {
     reserved1: [u8; 32],
     mrsigner: [u8; 32],
     reserved2: [u64; 12],
-    isv_prod_id: isv::ProdId,
-    isv_svn: isv::Svn,
+    isv_prod_id: isv::ProductId,
+    isv_svn: isv::SecurityVersion,
     reserved3: [u32; 7],
     reserved4: [[u64; 28]; 17],
 }

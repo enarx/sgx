@@ -86,7 +86,7 @@ mod sig;
 mod hasher;
 
 pub use attr::{Attributes, Features, Xfrm};
-pub use isv::{ProdId, Svn};
+pub use isv::{ProductId, SecurityVersion};
 pub use misc::MiscSelect;
 pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
