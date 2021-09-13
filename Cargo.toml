@@ -26,7 +26,7 @@ asm = []
 std = []
 
 [dependencies]
-x86_64 = { git = "https://github.com/npmccallum/x86_64", branch = "errors", default-features = false }
+x86_64 = { version="0.14.5", default-features = false }
 openssl = { version = "0.10", optional = true }
 bitflags = "1.2"
 
