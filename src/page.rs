@@ -35,6 +35,7 @@ bitflags! {
 ///
 /// Section 38.11.2
 #[repr(u8)]
+#[non_exhaustive]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Class {
     /// Page is an SECS.
