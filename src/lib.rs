@@ -6,8 +6,8 @@
 
 #![cfg_attr(feature = "asm", feature(asm, naked_functions))]
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
+#![deny(clippy::exhaustive_enums)]
 #![deny(clippy::all)]
-#![allow(clippy::identity_op)]
 #![deny(missing_docs)]
 
 /// This macro enables writing tests for alignment, size, and offset of fields in structs.
