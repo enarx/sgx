@@ -8,7 +8,6 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![deny(clippy::exhaustive_enums)]
 #![deny(clippy::all)]
-#![deny(missing_docs)]
 
 /// This macro enables writing tests for alignment, size, and offset of fields in structs.
 /// Example usage:
@@ -81,6 +80,7 @@ mod misc;
 mod page;
 mod secs;
 mod sig;
+mod ssa;
 
 #[cfg(feature = "crypto")]
 mod hasher;
@@ -91,6 +91,7 @@ pub use misc::MiscSelect;
 pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
 pub use sig::{Author, Masked, Measurement, Parameters, Signature};
+pub use ssa::{ExInfo, ExitType, GenPurposeRegs, Misc, StateSaveArea, Vector, XSave};
 
 #[cfg(feature = "crypto")]
 pub use hasher::{Hasher, InvalidSize};
