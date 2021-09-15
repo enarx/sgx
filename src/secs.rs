@@ -7,7 +7,7 @@
 //! page created for any enclave. It is moved from a temporary buffer to an EPC
 //! by the means of ENCLS(ECREATE) leaf.
 
-use super::{attr, isv, misc::MiscSelect, sig::Parameters};
+use super::{Attributes, MiscSelect, Parameters};
 use core::num::{NonZeroU32, NonZeroUsize};
 
 /// Section 38.7
@@ -19,13 +19,13 @@ pub struct Secs {
     ssaframesize: NonZeroU32,
     miscselect: MiscSelect,
     reserved0: [u8; 24],
-    attributes: attr::Attributes,
+    attributes: Attributes,
     mrenclave: [u8; 32],
     reserved1: [u8; 32],
     mrsigner: [u8; 32],
     reserved2: [u64; 12],
-    isv_prod_id: isv::ProductId,
-    isv_svn: isv::SecurityVersion,
+    isv_prod_id: u16,
+    isv_svn: u16,
     reserved3: [u32; 7],
     reserved4: [[u64; 28]; 17],
 }

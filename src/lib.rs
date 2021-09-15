@@ -75,7 +75,6 @@ macro_rules! testaso {
 //pub mod attestation_types;
 
 mod attr;
-mod isv;
 mod misc;
 mod page;
 mod secs;
@@ -86,7 +85,6 @@ mod ssa;
 mod hasher;
 
 pub use attr::{Attributes, Features, Xfrm};
-pub use isv::{ProductId, SecurityVersion};
 pub use misc::MiscSelect;
 pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
