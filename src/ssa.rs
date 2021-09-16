@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! State Save Area (SSA) Frame (Section 38.9)
-//! When an AEX occurs while running in an enclave, the architectural state is saved in the
-//! thread’s current SSA frame, which is pointed to by TCS.CSSA.
+//! State Save Area (SSA)
+//!
+//! The types in this module are typically used by an enclave.
+//!
+//! When an AEX occurs while running in an enclave, the architectural state is
+//! saved in the thread’s current SSA frame. An enclave can view the CPU state
+//! from a previous AEX by finding the current SSA frame using the CSSA and
+//! casing a pointer to this frame to a `StateSaveArea` reference.
 
 #![allow(clippy::unreadable_literal)]
 

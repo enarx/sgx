@@ -81,7 +81,7 @@ mod measure;
 mod misc;
 mod page;
 mod secs;
-mod ssa;
+pub mod ssa;
 
 pub use attr::{Attributes, Features, Xfrm};
 pub use author::Author;
@@ -90,7 +90,6 @@ pub use measure::{Masked, Measure, Parameters};
 pub use misc::MiscSelect;
 pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
-pub use ssa::{ExInfo, ExitType, GenPurposeRegs, Misc, StateSaveArea, Vector, XSave};
 
 /// SGX ENCLU Leaf Instructions
 pub mod enclu {
