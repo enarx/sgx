@@ -93,7 +93,7 @@ pub use secs::Secs;
 pub use ssa::{ExInfo, ExitType, GenPurposeRegs, Misc, StateSaveArea, Vector, XSave};
 
 /// SGX ENCLU Leaf Instructions
-pub mod leaf {
+pub mod enclu {
     pub const EREPORT: usize = 0x00;
     pub const EGETKEY: usize = 0x01;
     pub const EENTER: usize = 0x02;
