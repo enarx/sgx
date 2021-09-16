@@ -4,7 +4,7 @@
 //! Section references in further documentation refer to this document.
 //! https://www.intel.com/content/dam/www/public/emea/xe/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3d-part-4-manual.pdf
 
-use crate::{Author, InvalidSize, Measure, Parameters, RsaNumber, SecInfo, Signature};
+use crate::{Author, InvalidSize, Measure, RsaNumber, SecInfo, Signature};
 
 use core::num::NonZeroU32;
 use core::slice::from_raw_parts;
@@ -20,11 +20,11 @@ const EXPONENT: u32 = 3;
 /// summarized at https://github.com/enarx/enarx/wiki/SGX-Measurement. The leaf
 /// functions are mimicked to obtain these values, but are not actually called here;
 /// to use them, refer to the [iocuddle-sgx](../../iocuddle-sgx) library.
-pub struct Hasher(Sha256, Parameters);
+pub struct Hasher(Sha256);
 
 impl Hasher {
     /// Mimics call to SGX_IOC_ENCLAVE_CREATE (ECREATE).
-    pub fn new(size: usize, ssa_frame_pages: NonZeroU32, parameters: Parameters) -> Self {
+    pub fn new(size: usize, ssa_frame_pages: NonZeroU32) -> Self {
         let size = size as u64;
 
         // This value documented in 41.3.
@@ -36,7 +36,7 @@ impl Hasher {
         sha256.update(&size.to_le_bytes());
         sha256.update(&[0u8; 44]); // Reserved
 
-        Self(sha256, parameters)
+        Self(sha256)
     }
 
     /// Hashes pages as if they were loaded via EADD/EEXTEND
@@ -83,8 +83,8 @@ impl Hasher {
     }
 
     /// Produces MRENCLAVE value by hashing with SHA256.
-    pub fn finish(self) -> Measure {
-        self.1.measure(self.0.finish())
+    pub fn finish(self) -> [u8; 32] {
+        self.0.finish()
     }
 }
 

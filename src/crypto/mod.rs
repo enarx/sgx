@@ -12,7 +12,7 @@ pub struct InvalidSize;
 
 #[cfg(all(test, any(feature = "openssl")))]
 mod test {
-    use crate::{Hasher, InvalidSize, Parameters, Permissions, SecInfo, Signature};
+    use crate::{Hasher, InvalidSize, Permissions, SecInfo, Signature};
 
     use std::fs::File;
     use std::io::Read;
@@ -59,7 +59,7 @@ mod test {
         //   enclave size: the next power of two beyond our segments
         //      ssa pages: 1
         let ssa_pages = NonZeroU32::new(1).unwrap();
-        let mut hasher = Hasher::new(size.next_power_of_two(), ssa_pages, Parameters::default());
+        let mut hasher = Hasher::new(size.next_power_of_two(), ssa_pages);
 
         let mut off = 0;
         for i in input {
@@ -68,7 +68,7 @@ mod test {
         }
 
         // Use default signature parameters
-        Ok(hasher.finish().mrenclave())
+        Ok(hasher.finish())
     }
 
     #[test]
