@@ -75,6 +75,7 @@ macro_rules! testaso {
 //pub mod attestation_types;
 
 mod attr;
+mod author;
 mod misc;
 mod page;
 mod secs;
@@ -85,10 +86,11 @@ mod ssa;
 mod hasher;
 
 pub use attr::{Attributes, Features, Xfrm};
+pub use author::Author;
 pub use misc::MiscSelect;
 pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
-pub use sig::{Author, Masked, Measurement, Parameters, Signature};
+pub use sig::{Masked, Measurement, Parameters, Signature};
 pub use ssa::{ExInfo, ExitType, GenPurposeRegs, Misc, StateSaveArea, Vector, XSave};
 
 #[cfg(feature = "openssl")]
