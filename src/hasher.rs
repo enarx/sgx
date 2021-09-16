@@ -4,14 +4,12 @@
 //! Section references in further documentation refer to this document.
 //! https://www.intel.com/content/dam/www/public/emea/xe/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3d-part-4-manual.pdf
 
-#![cfg(feature = "crypto")]
-#![allow(clippy::unreadable_literal)]
-
 use crate::{Measurement, Parameters, SecInfo};
 
 use openssl::sha;
 
-use std::num::NonZeroU32;
+use core::num::NonZeroU32;
+use core::slice::from_raw_parts;
 
 const PAGE: usize = 4096;
 
@@ -63,11 +61,10 @@ impl Hasher {
         // For each page in the input...
         for page in pages.chunks(PAGE) {
             // Hash for the EADD instruction.
+            let si = &secinfo as *const _ as *const u8;
             self.0.update(&EADD.to_le_bytes());
             self.0.update(&(offset as u64).to_le_bytes());
-            self.0.update(unsafe {
-                std::slice::from_raw_parts(&secinfo as *const _ as *const u8, 48)
-            });
+            self.0.update(unsafe { from_raw_parts(si, 48) });
 
             // Hash for the EEXTEND instruction.
             if measure {

@@ -81,7 +81,7 @@ mod secs;
 mod sig;
 mod ssa;
 
-#[cfg(feature = "crypto")]
+#[cfg(feature = "openssl")]
 mod hasher;
 
 pub use attr::{Attributes, Features, Xfrm};
@@ -91,7 +91,7 @@ pub use secs::Secs;
 pub use sig::{Author, Masked, Measurement, Parameters, Signature};
 pub use ssa::{ExInfo, ExitType, GenPurposeRegs, Misc, StateSaveArea, Vector, XSave};
 
-#[cfg(feature = "crypto")]
+#[cfg(feature = "openssl")]
 pub use hasher::{Hasher, InvalidSize};
 
 /// SGX ENCLU Leaf Instructions
@@ -107,7 +107,7 @@ pub mod leaf {
     pub const EACCEPTCOPY: usize = 0x07;
 }
 
-#[cfg(all(test, feature = "crypto"))]
+#[cfg(all(test, feature = "openssl"))]
 mod crypto {
     use super::*;
 
