@@ -126,65 +126,6 @@ impl Measure {
             attr: self.attr,
         }
     }
-
-    /// Signs a measure using the specified key on behalf of an author
-    #[cfg(feature = "openssl")]
-    pub fn sign(
-        self,
-        author: super::Author,
-        key: openssl::rsa::Rsa<openssl::pkey::Private>,
-    ) -> Result<super::Signature, openssl::error::ErrorStack> {
-        use crate::RsaNumber;
-        use core::convert::TryInto;
-        use openssl::{bn::*, hash::*, pkey::*, sign::*};
-        const EXPONENT: u32 = 3;
-        assert!(key.n().num_bytes() as usize <= RsaNumber::SIZE);
-        assert_eq!(key.e(), &*BigNum::from_u32(EXPONENT)?);
-
-        let a = unsafe {
-            core::slice::from_raw_parts(
-                &author as *const _ as *const u8,
-                core::mem::size_of_val(&author),
-            )
-        };
-
-        let c = unsafe {
-            core::slice::from_raw_parts(
-                &self as *const _ as *const u8,
-                core::mem::size_of_val(&self),
-            )
-        };
-
-        // Generates signature on Signature author and contents
-        let rsa_key = PKey::from_rsa(key.clone())?;
-        let md = MessageDigest::sha256();
-        let mut signer = Signer::new(md, &rsa_key)?;
-        signer.update(a)?;
-        signer.update(c)?;
-        let signature = signer.sign_to_vec()?;
-
-        // Generates q1, q2 values for RSA signature verification
-        let s = BigNum::from_slice(&signature)?;
-        let m = key.n();
-
-        let mut ctx = BigNumContext::new()?;
-        let mut q1 = BigNum::new()?;
-        let mut qr = BigNum::new()?;
-
-        q1.div_rem(&mut qr, &(&s * &s), m, &mut ctx)?;
-        let q2 = &(&s * &qr) / m;
-
-        Ok(super::Signature {
-            author,
-            modulus: m.try_into()?,
-            exponent: EXPONENT,
-            signature: s.try_into()?,
-            measure: self,
-            reserved: [0; 12],
-            q1: q1.try_into()?,
-            q2: q2.try_into()?,
-        })
-    }
 }
 
 #[cfg(test)]
