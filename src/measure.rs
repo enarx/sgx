@@ -5,79 +5,9 @@
 //! contains information about the enclave. SIGSTRUCT is processed by the EINIT
 //! leaf function to verify that the enclave was properly built.
 
-use crate::{Attributes, MiscSelect};
+use crate::parameters::{Attributes, Masked, MiscSelect, Parameters};
 
 use core::fmt::Debug;
-use core::ops::{BitAnd, BitOr, Not};
-
-/// Succinctly describes a masked type, e.g. masked Attributes or masked MiscSelect.
-/// A mask is applied to Attributes and MiscSelect structs in a Signature (SIGSTRUCT)
-/// to specify values of Attributes and MiscSelect to enforce. This struct combines
-/// the struct and its mask for simplicity.
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Masked<T: BitAnd<Output = T>> {
-    /// The data being masked, e.g. Attribute flags.
-    pub data: T,
-
-    /// The mask.
-    pub mask: T,
-}
-
-impl<T> Default for Masked<T>
-where
-    T: BitAnd<Output = T>,
-    T: BitOr<Output = T>,
-    T: Not<Output = T>,
-    T: Default,
-    T: Copy,
-{
-    fn default() -> Self {
-        T::default().into()
-    }
-}
-
-impl<T> From<T> for Masked<T>
-where
-    T: BitAnd<Output = T>,
-    T: BitOr<Output = T>,
-    T: Not<Output = T>,
-    T: Copy,
-{
-    fn from(value: T) -> Self {
-        Self {
-            data: value,
-            mask: value | !value,
-        }
-    }
-}
-
-impl<T> PartialEq<T> for Masked<T>
-where
-    T: BitAnd<Output = T>,
-    T: PartialEq,
-    T: Copy,
-{
-    fn eq(&self, other: &T) -> bool {
-        self.mask & self.data == self.mask & *other
-    }
-}
-
-/// Enclave parameters
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
-pub struct Parameters {
-    /// Fault information to display in the MISC section of the SSA
-    pub misc: Masked<MiscSelect>,
-
-    /// Enclave attributes
-    pub attr: Masked<Attributes>,
-
-    /// ISV-defined product identifier
-    pub isv_prod_id: u16,
-
-    /// ISV-defined security version number
-    pub isv_svn: u16,
-}
 
 impl Parameters {
     /// Combines the parameters and a hash of the enclave to produce a `Measure`

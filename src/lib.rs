@@ -74,20 +74,17 @@ macro_rules! testaso {
 
 //pub mod attestation_types;
 
-mod attr;
 mod author;
 mod crypto;
 mod measure;
-mod misc;
 mod page;
+pub mod parameters;
 mod secs;
 pub mod ssa;
 
-pub use attr::{Attributes, Features, Xfrm};
 pub use author::Author;
 pub use crypto::*;
-pub use measure::{Masked, Measure, Parameters};
-pub use misc::MiscSelect;
+pub use measure::Measure;
 pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
 
