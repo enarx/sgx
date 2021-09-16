@@ -25,7 +25,8 @@ jobs:
         features:
           -
           - std
-          - crypto
+          - openssl
+          - std,openssl
         profile:
           - {name: debug}
           - {name: release, flag: --release}
@@ -43,10 +44,16 @@ jobs:
             features: asm,std
             profile: {name: release, flag: --release}
           - toolchain: nightly
-            features: asm,crypto
+            features: asm,openssl
             profile: {name: debug}
           - toolchain: nightly
-            features: asm,crypto
+            features: asm,openssl
+            profile: {name: release, flag: --release}
+          - toolchain: nightly
+            features: asm,std,openssl
+            profile: {name: debug}
+          - toolchain: nightly
+            features: asm,std,openssl
             profile: {name: release, flag: --release}
 
   hw:

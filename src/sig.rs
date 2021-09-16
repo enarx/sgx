@@ -10,12 +10,6 @@ use crate::{Attributes, MiscSelect};
 use core::fmt::Debug;
 use core::ops::{BitAnd, BitOr, Not};
 
-#[cfg(feature = "crypto")]
-use openssl::{bn, pkey, rsa};
-
-#[cfg(feature = "crypto")]
-use core::convert::{TryFrom, TryInto};
-
 /// Succinctly describes a masked type, e.g. masked Attributes or masked MiscSelect.
 /// A mask is applied to Attributes and MiscSelect structs in a Signature (SIGSTRUCT)
 /// to specify values of Attributes and MiscSelect to enforce. This struct combines
@@ -170,14 +164,17 @@ impl Measurement {
     }
 
     /// Signs a measurement using the specified key on behalf of an author
-    #[cfg(feature = "crypto")]
-    pub fn sign(self, author: Author, key: rsa::Rsa<pkey::Private>) -> std::io::Result<Signature> {
-        use openssl::{hash, sign};
+    #[cfg(feature = "openssl")]
+    pub fn sign(
+        self,
+        author: Author,
+        key: openssl::rsa::Rsa<openssl::pkey::Private>,
+    ) -> Result<Signature, openssl::error::ErrorStack> {
+        use core::convert::TryInto;
+        use openssl::{bn::*, hash::*, pkey::*, sign::*};
         const EXPONENT: u32 = 3;
-
-        if key.e() != &*bn::BigNum::from_u32(EXPONENT)? {
-            return Err(std::io::ErrorKind::InvalidInput.into());
-        }
+        assert!(key.n().num_bytes() as usize <= RsaNumber::SIZE);
+        assert_eq!(key.e(), &*BigNum::from_u32(EXPONENT)?);
 
         let a = unsafe {
             core::slice::from_raw_parts(
@@ -194,20 +191,20 @@ impl Measurement {
         };
 
         // Generates signature on Signature author and contents
-        let rsa_key = pkey::PKey::from_rsa(key.clone())?;
-        let md = hash::MessageDigest::sha256();
-        let mut signer = sign::Signer::new(md, &rsa_key)?;
+        let rsa_key = PKey::from_rsa(key.clone())?;
+        let md = MessageDigest::sha256();
+        let mut signer = Signer::new(md, &rsa_key)?;
         signer.update(a)?;
         signer.update(c)?;
         let signature = signer.sign_to_vec()?;
 
         // Generates q1, q2 values for RSA signature verification
-        let s = bn::BigNum::from_slice(&signature)?;
+        let s = BigNum::from_slice(&signature)?;
         let m = key.n();
 
-        let mut ctx = bn::BigNumContext::new()?;
-        let mut q1 = bn::BigNum::new()?;
-        let mut qr = bn::BigNum::new()?;
+        let mut ctx = BigNumContext::new()?;
+        let mut q1 = BigNum::new()?;
+        let mut qr = BigNum::new()?;
 
         q1.div_rem(&mut qr, &(&s * &s), m, &mut ctx)?;
         let q2 = &(&s * &qr) / m;
@@ -249,19 +246,16 @@ impl PartialEq for RsaNumber {
     }
 }
 
-#[cfg(feature = "crypto")]
-impl TryFrom<&bn::BigNumRef> for RsaNumber {
-    type Error = std::io::Error;
+#[cfg(feature = "openssl")]
+impl core::convert::TryFrom<&openssl::bn::BigNumRef> for RsaNumber {
+    type Error = openssl::error::ErrorStack;
 
     #[inline]
-    fn try_from(value: &bn::BigNumRef) -> Result<Self, Self::Error> {
+    fn try_from(value: &openssl::bn::BigNumRef) -> Result<Self, Self::Error> {
         let mut le = [0u8; Self::SIZE];
         let be = value.to_vec();
 
-        if be.len() > Self::SIZE {
-            return Err(std::io::ErrorKind::InvalidInput.into());
-        }
-
+        assert!(be.len() <= Self::SIZE);
         for i in 0..be.len() {
             le[be.len() - i - 1] = be[i];
         }
@@ -270,13 +264,13 @@ impl TryFrom<&bn::BigNumRef> for RsaNumber {
     }
 }
 
-#[cfg(feature = "crypto")]
-impl TryFrom<bn::BigNum> for RsaNumber {
-    type Error = std::io::Error;
+#[cfg(feature = "openssl")]
+impl core::convert::TryFrom<openssl::bn::BigNum> for RsaNumber {
+    type Error = openssl::error::ErrorStack;
 
     #[inline]
-    fn try_from(value: bn::BigNum) -> Result<Self, Self::Error> {
-        TryFrom::<&bn::BigNumRef>::try_from(&*value)
+    fn try_from(value: openssl::bn::BigNum) -> Result<Self, Self::Error> {
+        core::convert::TryFrom::<&openssl::bn::BigNumRef>::try_from(&*value)
     }
 }
 
@@ -314,7 +308,7 @@ impl Signature {
     }
 
     /// Read a `Signature` from a file
-    #[cfg(feature = "std")]
+    #[cfg(any(test, feature = "std"))]
     pub fn read_from(mut reader: impl std::io::Read) -> std::io::Result<Self> {
         // # Safety
         //

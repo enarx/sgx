@@ -21,7 +21,6 @@ is-it-maintained-issue-resolution = { repository = "enarx/sgx" }
 is-it-maintained-open-issues = { repository = "enarx/sgx" }
 
 [features]
-crypto = ["std", "openssl"]
 asm = []
 std = []
 
