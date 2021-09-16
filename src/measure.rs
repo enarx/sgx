@@ -5,7 +5,7 @@
 //! contains information about the enclave. SIGSTRUCT is processed by the EINIT
 //! leaf function to verify that the enclave was properly built.
 
-use crate::{Attributes, Author, MiscSelect};
+use crate::{Attributes, MiscSelect};
 
 use core::fmt::Debug;
 use core::ops::{BitAnd, BitOr, Not};
@@ -80,9 +80,9 @@ pub struct Parameters {
 }
 
 impl Parameters {
-    /// Combines the parameters and a hash of the enclave to produce a `Measurement`
-    pub const fn measurement(&self, mrenclave: [u8; 32]) -> Measurement {
-        Measurement {
+    /// Combines the parameters and a hash of the enclave to produce a `Measure`
+    pub const fn measure(&self, mrenclave: [u8; 32]) -> Measure {
+        Measure {
             misc: self.misc,
             reserved0: [0; 20],
             attr: self.attr,
@@ -94,14 +94,14 @@ impl Parameters {
     }
 }
 
-/// The enclave Measurement
+/// The enclave Measure
 ///
 /// This structure encompasses the second block of fields from `SIGSTRUCT`
 /// that is included in the signature. It is split out from `Signature`
 /// in order to make it easy to hash the fields for the signature.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Measurement {
+pub struct Measure {
     misc: Masked<MiscSelect>,
     reserved0: [u8; 20],
     attr: Masked<Attributes>,
@@ -111,8 +111,8 @@ pub struct Measurement {
     isv_svn: u16,
 }
 
-impl Measurement {
-    /// Get the enclave measurement hash
+impl Measure {
+    /// Get the enclave measure hash
     pub fn mrenclave(&self) -> [u8; 32] {
         self.mrenclave
     }
@@ -127,13 +127,14 @@ impl Measurement {
         }
     }
 
-    /// Signs a measurement using the specified key on behalf of an author
+    /// Signs a measure using the specified key on behalf of an author
     #[cfg(feature = "openssl")]
     pub fn sign(
         self,
-        author: Author,
+        author: super::Author,
         key: openssl::rsa::Rsa<openssl::pkey::Private>,
-    ) -> Result<Signature, openssl::error::ErrorStack> {
+    ) -> Result<super::Signature, openssl::error::ErrorStack> {
+        use crate::RsaNumber;
         use core::convert::TryInto;
         use openssl::{bn::*, hash::*, pkey::*, sign::*};
         const EXPONENT: u32 = 3;
@@ -173,12 +174,12 @@ impl Measurement {
         q1.div_rem(&mut qr, &(&s * &s), m, &mut ctx)?;
         let q2 = &(&s * &qr) / m;
 
-        Ok(Signature {
+        Ok(super::Signature {
             author,
             modulus: m.try_into()?,
             exponent: EXPONENT,
             signature: s.try_into()?,
-            measurement: self,
+            measure: self,
             reserved: [0; 12],
             q1: q1.try_into()?,
             q2: q2.try_into()?,
@@ -186,111 +187,9 @@ impl Measurement {
     }
 }
 
-#[derive(Clone)]
-struct RsaNumber([u8; Self::SIZE]);
-
-impl RsaNumber {
-    const SIZE: usize = 384;
-}
-
-impl core::fmt::Debug for RsaNumber {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        for b in self.0.iter() {
-            write!(f, "{:02x}", *b)?;
-        }
-
-        Ok(())
-    }
-}
-
-impl Eq for RsaNumber {}
-impl PartialEq for RsaNumber {
-    fn eq(&self, rhs: &Self) -> bool {
-        self.0[..] == rhs.0[..]
-    }
-}
-
-#[cfg(feature = "openssl")]
-impl core::convert::TryFrom<&openssl::bn::BigNumRef> for RsaNumber {
-    type Error = openssl::error::ErrorStack;
-
-    #[inline]
-    fn try_from(value: &openssl::bn::BigNumRef) -> Result<Self, Self::Error> {
-        let mut le = [0u8; Self::SIZE];
-        let be = value.to_vec();
-
-        assert!(be.len() <= Self::SIZE);
-        for i in 0..be.len() {
-            le[be.len() - i - 1] = be[i];
-        }
-
-        Ok(Self(le))
-    }
-}
-
-#[cfg(feature = "openssl")]
-impl core::convert::TryFrom<openssl::bn::BigNum> for RsaNumber {
-    type Error = openssl::error::ErrorStack;
-
-    #[inline]
-    fn try_from(value: openssl::bn::BigNum) -> Result<Self, Self::Error> {
-        core::convert::TryFrom::<&openssl::bn::BigNumRef>::try_from(&*value)
-    }
-}
-
-/// The `Signature` on the enclave
-///
-/// This structure encompasses the `SIGSTRUCT` structure from the SGX
-/// documentation, renamed for ergonomics. The two portions of the
-/// data that are included in the signature are further divided into
-/// subordinate structures (`Author` and `Contents`) for ease during
-/// signature generation and validation.
-///
-/// Section 38.13
-#[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Signature {
-    author: Author,
-    modulus: RsaNumber,
-    exponent: u32,
-    signature: RsaNumber,
-    measurement: Measurement,
-    reserved: [u8; 12],
-    q1: RsaNumber,
-    q2: RsaNumber,
-}
-
-impl Signature {
-    /// Get the enclave author
-    pub fn author(&self) -> Author {
-        self.author
-    }
-
-    /// Get the enclave measurement
-    pub fn measurement(&self) -> Measurement {
-        self.measurement
-    }
-
-    /// Read a `Signature` from a file
-    #[cfg(any(test, feature = "std"))]
-    pub fn read_from(mut reader: impl std::io::Read) -> std::io::Result<Self> {
-        // # Safety
-        //
-        // This code is safe because we never read from the slice before it is
-        // fully written to.
-
-        let mut sig = std::mem::MaybeUninit::<Signature>::uninit();
-        let ptr = sig.as_mut_ptr() as *mut u8;
-        let len = std::mem::size_of_val(&sig);
-        let buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-        reader.read_exact(buf).unwrap();
-        unsafe { Ok(sig.assume_init()) }
-    }
-}
-
 #[cfg(test)]
 testaso! {
-    struct Measurement: 4, 128 => {
+    struct Measure: 4, 128 => {
         misc: 0,
         reserved0: 8,
         attr: 28,
@@ -298,16 +197,5 @@ testaso! {
         reserved1: 92,
         isv_prod_id: 124,
         isv_svn: 126
-    }
-
-    struct Signature: 8, 1808 => {
-        author: 0,
-        modulus: 128,
-        exponent: 512,
-        signature: 516,
-        measurement: 900,
-        reserved: 1028,
-        q1: 1040,
-        q2: 1424
     }
 }

@@ -76,10 +76,10 @@ macro_rules! testaso {
 
 mod attr;
 mod author;
+mod measure;
 mod misc;
 mod page;
 mod secs;
-mod sig;
 mod ssa;
 
 #[cfg(feature = "openssl")]
@@ -87,17 +87,16 @@ mod hasher;
 
 pub use attr::{Attributes, Features, Xfrm};
 pub use author::Author;
+pub use measure::{Masked, Measure, Parameters};
 pub use misc::MiscSelect;
 pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
-pub use sig::{Masked, Measurement, Parameters, Signature};
 pub use ssa::{ExInfo, ExitType, GenPurposeRegs, Misc, StateSaveArea, Vector, XSave};
 
 #[cfg(feature = "openssl")]
 pub use hasher::{Hasher, InvalidSize};
 
 /// SGX ENCLU Leaf Instructions
-#[allow(missing_docs)]
 pub mod leaf {
     pub const EREPORT: usize = 0x00;
     pub const EGETKEY: usize = 0x01;
@@ -107,6 +106,122 @@ pub mod leaf {
     pub const EACCEPT: usize = 0x05;
     pub const EMODPE: usize = 0x06;
     pub const EACCEPTCOPY: usize = 0x07;
+}
+
+#[derive(Clone)]
+struct RsaNumber([u8; Self::SIZE]);
+
+impl RsaNumber {
+    const SIZE: usize = 384;
+}
+
+impl core::fmt::Debug for RsaNumber {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        for b in self.0.iter() {
+            write!(f, "{:02x}", *b)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Eq for RsaNumber {}
+impl PartialEq for RsaNumber {
+    fn eq(&self, rhs: &Self) -> bool {
+        self.0[..] == rhs.0[..]
+    }
+}
+
+#[cfg(feature = "openssl")]
+impl core::convert::TryFrom<&openssl::bn::BigNumRef> for RsaNumber {
+    type Error = openssl::error::ErrorStack;
+
+    #[inline]
+    fn try_from(value: &openssl::bn::BigNumRef) -> Result<Self, Self::Error> {
+        let mut le = [0u8; Self::SIZE];
+        let be = value.to_vec();
+
+        assert!(be.len() <= Self::SIZE);
+        for i in 0..be.len() {
+            le[be.len() - i - 1] = be[i];
+        }
+
+        Ok(Self(le))
+    }
+}
+
+#[cfg(feature = "openssl")]
+impl core::convert::TryFrom<openssl::bn::BigNum> for RsaNumber {
+    type Error = openssl::error::ErrorStack;
+
+    #[inline]
+    fn try_from(value: openssl::bn::BigNum) -> Result<Self, Self::Error> {
+        core::convert::TryFrom::<&openssl::bn::BigNumRef>::try_from(&*value)
+    }
+}
+
+/// The `Signature` on the enclave
+///
+/// This structure encompasses the `SIGSTRUCT` structure from the SGX
+/// documentation, renamed for ergonomics. The two portions of the
+/// data that are included in the signature are further divided into
+/// subordinate structures (`Author` and `Contents`) for ease during
+/// signature generation and validation.
+///
+/// Section 38.13
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Signature {
+    author: Author,
+    modulus: RsaNumber,
+    exponent: u32,
+    signature: RsaNumber,
+    measure: Measure,
+    reserved: [u8; 12],
+    q1: RsaNumber,
+    q2: RsaNumber,
+}
+
+impl Signature {
+    /// Get the enclave author
+    pub fn author(&self) -> Author {
+        self.author
+    }
+
+    /// Get the enclave measure
+    pub fn measure(&self) -> Measure {
+        self.measure
+    }
+
+    /// Read a `Signature` from a file
+    #[cfg(any(test, feature = "std"))]
+    pub fn read_from(mut reader: impl std::io::Read) -> std::io::Result<Self> {
+        // # Safety
+        //
+        // This code is safe because we never read from the slice before it is
+        // fully written to.
+
+        let mut sig = std::mem::MaybeUninit::<Signature>::uninit();
+        let ptr = sig.as_mut_ptr() as *mut u8;
+        let len = std::mem::size_of_val(&sig);
+        let buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
+        reader.read_exact(buf).unwrap();
+        unsafe { Ok(sig.assume_init()) }
+    }
+}
+
+#[cfg(test)]
+testaso! {
+    struct Signature: 8, 1808 => {
+        author: 0,
+        modulus: 128,
+        exponent: 512,
+        signature: 516,
+        measure: 900,
+        reserved: 1028,
+        q1: 1040,
+        q2: 1424
+    }
 }
 
 #[cfg(all(test, feature = "openssl"))]
@@ -274,7 +389,7 @@ mod crypto {
         // Validate the hash.
         let rwx = Permissions::READ | Permissions::WRITE | Permissions::EXECUTE;
         assert_eq!(
-            sig.measurement().mrenclave(),
+            sig.measure().mrenclave(),
             hash(&[(&tcs, SecInfo::tcs()), (&src, SecInfo::reg(rwx))]).unwrap(),
             "failed to produce correct mrenclave hash"
         );
@@ -282,7 +397,7 @@ mod crypto {
         // Ensure that sign() can reproduce the exact same signature struct.
         assert_eq!(
             sig,
-            sig.measurement().sign(sig.author(), key).unwrap(),
+            sig.measure().sign(sig.author(), key).unwrap(),
             "failed to produce correct signature"
         );
     }
