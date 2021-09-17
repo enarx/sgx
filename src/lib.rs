@@ -74,18 +74,14 @@ macro_rules! testaso {
 
 //pub mod attestation_types;
 
-mod author;
-mod crypto;
-mod measure;
-mod page;
+pub mod crypto;
+pub mod page;
 pub mod parameters;
 mod secs;
+pub mod signature;
 pub mod ssa;
 
-pub use author::Author;
 pub use crypto::*;
-pub use measure::Measure;
-pub use page::{Class, Permissions, SecInfo};
 pub use secs::Secs;
 
 /// SGX ENCLU Leaf Instructions
@@ -98,92 +94,4 @@ pub mod enclu {
     pub const EACCEPT: usize = 0x05;
     pub const EMODPE: usize = 0x06;
     pub const EACCEPTCOPY: usize = 0x07;
-}
-
-#[derive(Clone)]
-struct RsaNumber([u8; Self::SIZE]);
-
-impl RsaNumber {
-    const SIZE: usize = 384;
-}
-
-impl core::fmt::Debug for RsaNumber {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        for b in self.0.iter() {
-            write!(f, "{:02x}", *b)?;
-        }
-
-        Ok(())
-    }
-}
-
-impl Eq for RsaNumber {}
-impl PartialEq for RsaNumber {
-    fn eq(&self, rhs: &Self) -> bool {
-        self.0[..] == rhs.0[..]
-    }
-}
-
-/// The `Signature` on the enclave
-///
-/// This structure encompasses the `SIGSTRUCT` structure from the SGX
-/// documentation, renamed for ergonomics. The two portions of the
-/// data that are included in the signature are further divided into
-/// subordinate structures (`Author` and `Contents`) for ease during
-/// signature generation and validation.
-///
-/// Section 38.13
-#[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Signature {
-    author: Author,
-    modulus: RsaNumber,
-    exponent: u32,
-    signature: RsaNumber,
-    measure: Measure,
-    reserved: [u8; 12],
-    q1: RsaNumber,
-    q2: RsaNumber,
-}
-
-impl Signature {
-    /// Get the enclave author
-    pub fn author(&self) -> Author {
-        self.author
-    }
-
-    /// Get the enclave measure
-    pub fn measure(&self) -> Measure {
-        self.measure
-    }
-
-    /// Read a `Signature` from a file
-    #[cfg(any(test, feature = "std"))]
-    pub fn read_from(mut reader: impl std::io::Read) -> std::io::Result<Self> {
-        // # Safety
-        //
-        // This code is safe because we never read from the slice before it is
-        // fully written to.
-
-        let mut sig = std::mem::MaybeUninit::<Signature>::uninit();
-        let ptr = sig.as_mut_ptr() as *mut u8;
-        let len = std::mem::size_of_val(&sig);
-        let buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-        reader.read_exact(buf).unwrap();
-        unsafe { Ok(sig.assume_init()) }
-    }
-}
-
-#[cfg(test)]
-testaso! {
-    struct Signature: 8, 1808 => {
-        author: 0,
-        modulus: 128,
-        exponent: 512,
-        signature: 516,
-        measure: 900,
-        reserved: 1028,
-        q1: 1040,
-        q2: 1424
-    }
 }
