@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
+//! Enclave signature types
+//!
+//! This module contains types used to generate enclave signatures.
+//!
+//! Most likely, you will start with the `Hasher` to measure an enclave and
+//! product the `MRENCLAVE` measurement. Then you will want to use the
+//! `Parameters` type to create a `Body`. Finally, you will combine an
+//! `Author` with the `Body` and an `RsaPrivateKey` to create a `Signature`.
+
 mod author;
 mod body;
 mod hasher;

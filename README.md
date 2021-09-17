@@ -5,8 +5,19 @@
 
 # sgx
 
-Intel SGX Documentation is available at the following link.
-Section references in further documentation refer to this document.
-https://www.intel.com/content/dam/www/public/emea/xe/en/documents/manuals/64-ia-32-architectures-software-developer-vol-3d-part-4-manual.pdf
+This crate contains types for building an Intel SGX implementation.
+
+Fully understanding the contents of this crate will likely require access
+to the [Intel Software Developer Manual](https://software.intel.com/content/www/us/en/develop/articles/intel-sdm.html).
+
+How to use this crate partly depends on what you are trying to accomplish:
+
+  1. If you are an enclave developer, you probably want the `parameters`
+     and `ssa` modules.
+  2. If you are signing an enclave, you probably want the `signature` and
+     `crypto` modules.
+  3. If you are developing an enclave loader, you probably want the
+     `parameters` and `page` modules. However, you may also want the
+     `signature` module to load a signature.
 
 License: Apache-2.0
