@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
+//! Cryptography backends
+//!
+//! This module contains traits for implementing cryptography. It also contains
+//! some cryptography backends (see the `openssl` and `rcrypto` crate features).
+
 #[cfg(feature = "openssl")]
 pub mod openssl;
 
@@ -31,6 +36,7 @@ pub trait PrivateKey: Sized {
     fn sign(&self, author: &[u8], body: &[u8]) -> Result<SigData, Self::Error>;
 }
 
+/// A detached enclave signature
 pub struct SigData {
     pub signature: [u8; 384],
     pub modulus: [u8; 384],
