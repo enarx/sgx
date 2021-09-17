@@ -8,17 +8,17 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Author {
-    header1: u128,
+    header1: [u8; 16],
     vendor: u32,
     date: u32,
-    header2: u128,
+    header2: [u8; 16],
     swdefined: u32,
     reserved: [u32; 21],
 }
 
 impl Author {
-    const HEADER1: u128 = u128::from_be(0x0600_0000_E100_0000_0000_0100_0000_0000);
-    const HEADER2: u128 = u128::from_be(0x0101_0000_6000_0000_6000_0000_0100_0000);
+    const HEADER1: [u8; 16] = 0x06000000E10000000000010000000000u128.to_be_bytes();
+    const HEADER2: [u8; 16] = 0x01010000600000006000000001000000u128.to_be_bytes();
 
     #[allow(clippy::unreadable_literal)]
     /// Creates a new Author from a date and software defined value.
@@ -49,7 +49,7 @@ impl Author {
 
 #[cfg(test)]
 testaso! {
-    struct Author: 8, 128 => {
+    struct Author: 4, 128 => {
         header1: 0,
         vendor: 16,
         date: 20,

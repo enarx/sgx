@@ -62,7 +62,7 @@ impl Signature {
 
 #[cfg(test)]
 testaso! {
-    struct Signature: 8, 1808 => {
+    struct Signature: 4, 1808 => {
         author: 0,
         modulus: 128,
         exponent: 512,
