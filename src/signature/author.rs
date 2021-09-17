@@ -8,31 +8,42 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Author {
-    /// Constant byte string.
     header1: u128,
-    /// Vendor.
-    pub vendor: u32,
-    /// YYYYMMDD in BCD.
-    pub date: u32,
-    /// Constant byte string.
+    vendor: u32,
+    date: u32,
     header2: u128,
-    /// Software-defined value.
-    pub swdefined: u32,
+    swdefined: u32,
     reserved: [u32; 21],
 }
 
 impl Author {
+    const HEADER1: u128 = u128::from_be(0x0600_0000_E100_0000_0000_0100_0000_0000);
+    const HEADER2: u128 = u128::from_be(0x0101_0000_6000_0000_6000_0000_0100_0000);
+
     #[allow(clippy::unreadable_literal)]
     /// Creates a new Author from a date and software defined value.
+    ///
+    /// Note that the `date` input is defined in binary-coded decimal. For
+    /// example, the unix epoch is: `0x1970_01_01`.
     pub const fn new(date: u32, swdefined: u32) -> Self {
         Self {
-            header1: u128::from_be(0x06000000E10000000000010000000000),
-            vendor: 0u32,
+            header1: Self::HEADER1,
+            vendor: 0,
             date,
-            header2: u128::from_be(0x01010000600000006000000001000000),
+            header2: Self::HEADER2,
             swdefined,
             reserved: [0; 21],
         }
+    }
+
+    #[inline]
+    pub fn date(&self) -> u32 {
+        self.date
+    }
+
+    #[inline]
+    pub fn swdefined(&self) -> u32 {
+        self.swdefined
     }
 }
 
@@ -54,16 +65,11 @@ mod test {
 
     #[test]
     fn author_instantiation() {
-        let author = Author::new(20000330, 0u32);
-        assert_eq!(
-            author.header1,
-            u128::from_be(0x06000000E10000000000010000000000)
-        );
+        let author = Author::new(0x2000_03_30, 0u32);
+        assert_eq!(author.header1, Author::HEADER1);
         assert_eq!(author.vendor, 0u32);
-        assert_eq!(
-            author.header2,
-            u128::from_be(0x01010000600000006000000001000000)
-        );
+        assert_eq!(author.date, 0x2000_03_30);
+        assert_eq!(author.header2, Author::HEADER2);
         assert_eq!(author.swdefined, 0u32);
         assert_eq!(author.reserved, [0; 21]);
     }
