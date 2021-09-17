@@ -13,7 +13,8 @@ bitflags::bitflags! {
         /// Enables enclave debug mode
         ///
         /// This gives permission to use EDBGRD and EDBGWR to read and write
-        /// enclave memory as plaintext, respectively.
+        /// enclave memory as plaintext, respectively. You most likely want
+        /// to validate that this option is disabled during attestion.
         const DEBUG = 1 << 1;
 
         /// Enables enclave 64-bit mode

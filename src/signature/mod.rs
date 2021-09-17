@@ -10,15 +10,13 @@ pub use hasher::{Hasher, InvalidSize};
 
 use crate::crypto::PrivateKey;
 
-/// The `Signature` on the enclave
+/// A signature on an enclave
 ///
 /// This structure encompasses the `SIGSTRUCT` structure from the SGX
 /// documentation, renamed for ergonomics. The two portions of the
 /// data that are included in the signature are further divided into
-/// subordinate structures (`Author` and `Contents`) for ease during
+/// subordinate structures (`Author` and `Body`) for ease during
 /// signature generation and validation.
-///
-/// Section 38.13
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Signature {
@@ -33,6 +31,7 @@ pub struct Signature {
 }
 
 impl Signature {
+    /// Signs the supplied `author` and `body` with the specified `key`.
     pub fn new<T: PrivateKey>(key: &T, author: Author, body: Body) -> Result<Self, T::Error> {
         use core::mem::{size_of, transmute};
 
@@ -52,12 +51,10 @@ impl Signature {
         })
     }
 
-    /// Get the signature author
     pub fn author(&self) -> Author {
         self.author
     }
 
-    /// Get the signature body
     pub fn body(&self) -> Body {
         self.body
     }

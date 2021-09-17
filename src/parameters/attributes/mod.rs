@@ -7,7 +7,9 @@ pub use x86_64::registers::xcontrol::XCr0Flags as Xfrm;
 
 use core::ops::*;
 
-/// Section 38.7.1.
+/// Enclave CPU attributes
+///
+/// This type represents the CPU features turned on in an enclave.
 #[repr(C, packed(4))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Attributes {
@@ -16,6 +18,10 @@ pub struct Attributes {
 }
 
 impl Default for Attributes {
+    /// Creates a default `Attributes` instance
+    ///
+    /// The default instance contains no active flags. Note that this is an
+    /// invalid configuration and needs to be modified to fit your context.
     #[inline]
     fn default() -> Self {
         Self {

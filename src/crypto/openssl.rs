@@ -14,6 +14,7 @@ fn arr_from_bn(value: &bn::BigNumRef) -> [u8; 384] {
     le
 }
 
+/// SHA2-256
 pub struct S256Digest(sha::Sha256);
 
 impl super::Digest for S256Digest {
@@ -35,6 +36,7 @@ impl super::Digest for S256Digest {
     }
 }
 
+/// RSA w/ SHA2-256
 pub struct RS256PrivateKey(rsa::Rsa<pkey::Private>);
 
 impl RS256PrivateKey {

@@ -6,6 +6,7 @@ pub mod openssl;
 #[cfg(feature = "rcrypto")]
 pub mod rcrypto;
 
+/// A fixed-size hash
 pub trait Digest: Sized {
     type Output: AsRef<[u8]>;
 
@@ -20,6 +21,7 @@ pub trait Digest: Sized {
     }
 }
 
+/// A private key used for signing an enclave
 pub trait PrivateKey: Sized {
     type Error: core::fmt::Debug;
 
@@ -55,12 +57,14 @@ fn selftest<K: PrivateKey, D: Digest<Output = [u8; 32]>>() {
     let sig: Signature = unsafe { transmute(*SIG) };
     let rwx = Flags::READ | Flags::WRITE | Flags::EXECUTE;
 
+    // Validate hash generation
     let mut h = Hasher::<D>::new(len, NonZeroU32::new(1).unwrap());
     h.load(&BIN[..PAGE], 0, SecInfo::tcs(), true).unwrap();
     h.load(&BIN[PAGE..], PAGE, SecInfo::reg(rwx), true).unwrap();
     let mrenclave = h.finish();
     assert_eq!(sig.body().mrenclave(), mrenclave);
 
+    // Validate signature generation
     let key = K::from_pem(PEM).unwrap();
     assert_eq!(sig, Signature::new(&key, sig.author(), sig.body()).unwrap());
 }
