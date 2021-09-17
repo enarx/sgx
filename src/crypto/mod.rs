@@ -3,6 +3,9 @@
 #[cfg(feature = "openssl")]
 pub mod openssl;
 
+#[cfg(feature = "rcrypto")]
+pub mod rcrypto;
+
 pub trait Digest: Sized {
     type Output: AsRef<[u8]>;
 

@@ -27,33 +27,34 @@ jobs:
           - std
           - openssl
           - std,openssl
+          - std,openssl
         profile:
           - {name: debug}
           - {name: release, flag: --release}
         include:
           - toolchain: nightly
-            features: asm
+            features: rcrypto
             profile: {name: debug}
           - toolchain: nightly
-            features: asm
+            features: rcrypto
             profile: {name: release, flag: --release}
           - toolchain: nightly
-            features: asm,std
+            features: rcrypto,std
             profile: {name: debug}
           - toolchain: nightly
-            features: asm,std
+            features: rcrypto,std
             profile: {name: release, flag: --release}
           - toolchain: nightly
-            features: asm,openssl
+            features: rcrypto,openssl
             profile: {name: debug}
           - toolchain: nightly
-            features: asm,openssl
+            features: rcrypto,openssl
             profile: {name: release, flag: --release}
           - toolchain: nightly
-            features: asm,std,openssl
+            features: rcrypto,std,openssl
             profile: {name: debug}
           - toolchain: nightly
-            features: asm,std,openssl
+            features: rcrypto,std,openssl
             profile: {name: release, flag: --release}
 
   hw:
