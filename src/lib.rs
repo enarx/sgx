@@ -76,12 +76,10 @@ macro_rules! testaso {
 pub mod crypto;
 pub mod page;
 pub mod parameters;
-mod secs;
 pub mod signature;
 pub mod ssa;
 
 pub use crypto::*;
-pub use secs::Secs;
 
 /// SGX ENCLU Leaf Instructions
 pub mod enclu {
