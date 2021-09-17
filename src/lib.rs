@@ -80,8 +80,6 @@ pub mod platform;
 pub mod signature;
 pub mod ssa;
 
-pub use crypto::*;
-
 /// SGX ENCLU Leaf Instructions
 pub mod enclu {
     pub const EREPORT: usize = 0x00;
