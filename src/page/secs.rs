@@ -7,7 +7,7 @@
 //! page created for any enclave. It is moved from a temporary buffer to an EPC
 //! by the means of ENCLS(ECREATE) leaf.
 
-use super::parameters::{Attributes, MiscSelect, Parameters};
+use crate::parameters::{Attributes, MiscSelect, Parameters};
 use core::num::{NonZeroU32, NonZeroUsize};
 
 /// Section 38.7
