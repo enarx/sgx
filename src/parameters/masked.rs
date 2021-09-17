@@ -2,10 +2,9 @@
 
 use core::ops::{BitAnd, BitOr, Not};
 
-/// Succinctly describes a masked type, e.g. masked Attributes or masked MiscSelect.
-/// A mask is applied to Attributes and MiscSelect structs in a Signature (SIGSTRUCT)
-/// to specify values of Attributes and MiscSelect to enforce. This struct combines
-/// the struct and its mask for simplicity.
+/// A data type mask
+///
+/// This type succinctly describes a masked type.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Masked<T: BitAnd<Output = T>> {

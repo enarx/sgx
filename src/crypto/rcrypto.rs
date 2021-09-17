@@ -13,6 +13,7 @@ fn arr_from_big(value: &BigUint) -> [u8; 384] {
     arr
 }
 
+/// SHA2-256
 pub struct S256Digest(Sha256);
 
 impl super::Digest for S256Digest {
@@ -34,6 +35,7 @@ impl super::Digest for S256Digest {
     }
 }
 
+/// RSA w/ SHA2-256
 pub struct RS256PrivateKey(RsaPrivateKey);
 
 impl RS256PrivateKey {

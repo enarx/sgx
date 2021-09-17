@@ -18,23 +18,33 @@ pub use attributes::{Attributes, Features, Xfrm};
 pub use masked::Masked;
 
 bitflags::bitflags! {
-    /// MiscSelect (Section 38.7.2)
-    /// The bit vector of MISCSELECT selects which extended information is to be saved in the MISC
-    /// region of the SSA frame when an AEX is generated.
-    /// Section 38.7.2
+    /// Miscelaneous SSA data selector
+    ///
+    /// This type controls which extra data will be provided in the SSA page
+    /// after an AEX.
     #[derive(Default)]
     pub struct MiscSelect: u32 {
-        /// Report info about page faults and general protection exception that occurred inside an enclave.
+        /// Report #PF and #GP information
         const EXINFO = 1 << 0;
     }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
+/// Enclave creation parameters
+///
+/// This type is not specified in the Intel documentation and exists for
+/// convenience in manipulating sets of configuration. However, the inner
+/// types are specified in the Intel documentation.
+///
+/// Note well that this information is used in different ways in different
+/// contexts. For example, when creating an `Secs` page, the mask represents
+/// the platform-supported features. Likewise, when creating a `Signature`
+/// the mask represents the required features for the enclave.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Parameters {
-    /// Fault information to display in the MISC section of the SSA
+    /// Choose info for the `Misc` section of the `StateSaveArea`
     pub misc: Masked<MiscSelect>,
 
-    /// Enclave attributes
+    /// CPU features for the enclave
     pub attr: Masked<Attributes>,
 
     /// ISV-defined product identifier

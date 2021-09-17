@@ -9,16 +9,21 @@ use core::slice::from_raw_parts;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct InvalidSize;
 
-/// This struct creates and updates the MRENCLAVE value associated
-/// with an enclave's Signature (or SIGSTRUCT). This value is updated with
-/// each ECREATE, EADD, or EEXTEND operation as documented in 41.3 and as
-/// summarized at https://github.com/enarx/enarx/wiki/SGX-Measurement. The leaf
-/// functions are mimicked to obtain these values, but are not actually called here;
-/// to use them, refer to the [iocuddle-sgx](../../iocuddle-sgx) library.
+/// Hashes an enclave producing a measurement
+///
+/// This structure simulates the enclave creation process and produces an
+/// `MRENCLAVE` value (the enclave measurement) just like the firmware will do
+/// during enclave creation. This permits the creation and validation of
+/// measurements even when not on a system supporting SGX.
+///
+/// In order to create a measurement, you should create an instance using
+/// `Hasher::new()`. Then you should call `Hasher::load()` for all enclave
+/// segments. Finally, you should call `Hasher::finish()` to produce the
+/// `MRENCLAVE` value.
 pub struct Hasher<T: Digest>(T);
 
 impl<T: Digest> Hasher<T> {
-    /// Mimics call to SGX_IOC_ENCLAVE_CREATE (ECREATE).
+    /// Create a hasher instance
     pub fn new(size: usize, ssa_frame_pages: NonZeroU32) -> Self {
         let size = size as u64;
 
@@ -33,7 +38,10 @@ impl<T: Digest> Hasher<T> {
         Self(digest)
     }
 
-    /// Hashes pages as if they were loaded via EADD/EEXTEND
+    /// Simulate segment loading
+    ///
+    /// Call this function once per segment. Note that segment sizes **MUST**
+    /// be a multiple of the page size.
     pub fn load(
         &mut self,
         pages: &[u8],
@@ -76,7 +84,7 @@ impl<T: Digest> Hasher<T> {
         Ok(())
     }
 
-    /// Produces MRENCLAVE value by hashing with SHA256.
+    /// Produce the `MRENCLAVE` value
     pub fn finish(self) -> T::Output {
         self.0.finish()
     }

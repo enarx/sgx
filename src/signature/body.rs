@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! SigStruct (Section 38.13)
-//! SigStruct is a structure created and signed by the enclave developer that
-//! contains information about the enclave. SIGSTRUCT is processed by the EINIT
-//! leaf function to verify that the enclave was properly built.
-
 use crate::parameters::{Attributes, Masked, MiscSelect, Parameters};
 
 impl Parameters {

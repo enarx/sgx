@@ -9,6 +9,12 @@ impl Parameters {
     /// This creates a new instances of an SGX Enclave Control Structure (SECS)
     /// page using the specified `Parameters` along with the `base` address and
     /// `size` as well as the number of pages in an SSA frame.
+    ///
+    /// Note that the `Masked` types in `Parameters` are interpreted as follows:
+    ///   * `data`: contains the features the enclave author desires
+    ///   * `mask`: contains the features supported by this platform
+    ///
+    /// The intersection of these two sets forms the set of features enabled.
     pub fn secs(&self, base: *const (), size: usize, ssa_frame_pages: NonZeroU32) -> Secs {
         Secs {
             size: size as u64,
