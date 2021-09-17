@@ -76,9 +76,11 @@ macro_rules! testaso {
 pub mod crypto;
 pub mod page;
 pub mod parameters;
-pub mod platform;
 pub mod signature;
 pub mod ssa;
+
+#[cfg(target_arch = "x86_64")]
+pub mod platform;
 
 /// SGX ENCLU Leaf Instructions
 pub mod enclu {
