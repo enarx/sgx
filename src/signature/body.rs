@@ -7,6 +7,28 @@
 
 use crate::parameters::{Attributes, Masked, MiscSelect, Parameters};
 
+impl Parameters {
+    /// Creates a signature body
+    ///
+    /// This call creates a signature `Body` using the provided parameters and
+    /// `mrenclave` value.
+    ///
+    /// Note that the `Masked` types in `Parameters` are interpreted as follows:
+    ///   * `data`: contains the features the enclave author desires
+    ///   * `mask`: contains the features the enclave author requires
+    pub fn body(&self, mrenclave: [u8; 32]) -> Body {
+        Body {
+            misc: self.misc,
+            reserved0: [0; 20],
+            attr: self.attr,
+            mrenclave,
+            reserved1: [0; 32],
+            isv_prod_id: self.isv_prod_id,
+            isv_svn: self.isv_svn,
+        }
+    }
+}
+
 /// The enclave signature body
 ///
 /// This structure encompasses the second block of fields from `SIGSTRUCT`
@@ -39,18 +61,6 @@ impl core::fmt::Debug for Body {
 }
 
 impl Body {
-    pub fn new(parameters: Parameters, mrenclave: [u8; 32]) -> Self {
-        Self {
-            misc: parameters.misc,
-            reserved0: [0; 20],
-            attr: parameters.attr,
-            mrenclave,
-            reserved1: [0; 32],
-            isv_prod_id: parameters.isv_prod_id,
-            isv_svn: parameters.isv_svn,
-        }
-    }
-
     /// Get the enclave measure hash
     pub fn mrenclave(&self) -> [u8; 32] {
         self.mrenclave
