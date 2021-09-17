@@ -48,12 +48,12 @@ fn selftest<K: PrivateKey, D: Digest<Output = [u8; 32]>>() {
     use core::mem::{size_of, transmute};
     use core::num::NonZeroU32;
 
-    use crate::page::{Permissions, SecInfo};
+    use crate::page::{Perms, SecInfo};
     use crate::signature::{Hasher, Signature};
 
     let len = BIN.len().next_power_of_two();
     let sig: Signature = unsafe { transmute(*SIG) };
-    let rwx = Permissions::READ | Permissions::WRITE | Permissions::EXECUTE;
+    let rwx = Perms::READ | Perms::WRITE | Perms::EXECUTE;
 
     let mut h = Hasher::<D>::new(len, NonZeroU32::new(1).unwrap());
     h.load(&BIN[..PAGE], 0, SecInfo::tcs(), true).unwrap();
