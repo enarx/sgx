@@ -2,21 +2,17 @@
 
 use super::{Class, Flags};
 
-/// The security information (`SecInfo`) about a page
+/// The security information about a page
 ///
-/// Note that the `FLAGS` field from the SGX documentation is here
-/// divided into two fields (`flags` and `class`) for easy manipulation.
+/// This structure encodes the security information about one or more pages.
 ///
-/// Section 38.11
+/// Note that this structure divides the `FLAGS` field from the Intel docs
+/// into two fields (`flags` and `class`) for easy manipulation.
 #[derive(Copy, Clone)]
 #[repr(C, align(64))]
 pub struct SecInfo {
-    /// The permissions of the page
-    pub flags: Flags,
-
-    /// The type of the page
-    pub class: Class,
-
+    flags: Flags,
+    class: Class,
     reserved: [u16; 31],
 }
 
@@ -31,7 +27,7 @@ impl core::fmt::Debug for SecInfo {
 }
 
 impl SecInfo {
-    /// Creates a SecInfo (page) of class type Regular.
+    /// Creates a `SecInfo` instance for regular pages
     pub const fn reg(flags: Flags) -> Self {
         Self {
             flags,
@@ -40,13 +36,23 @@ impl SecInfo {
         }
     }
 
-    /// Creates a SecInfo (page) of class type TCS.
+    /// Creates a `SecInfo` instance for TCS pages
     pub const fn tcs() -> Self {
         Self {
             flags: Flags::empty(),
             class: Class::Tcs,
             reserved: [0; 31],
         }
+    }
+
+    /// Get the flags
+    pub const fn flags(&self) -> Flags {
+        self.flags
+    }
+
+    /// Get the class
+    pub const fn class(&self) -> Class {
+        self.class
     }
 }
 
