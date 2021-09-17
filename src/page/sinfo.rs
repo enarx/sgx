@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use super::{Class, Perms};
+use super::{Class, Flags};
 
 /// The security information (`SecInfo`) about a page
 ///
@@ -12,7 +12,7 @@ use super::{Class, Perms};
 #[repr(C, align(64))]
 pub struct SecInfo {
     /// The permissions of the page
-    pub perms: Perms,
+    pub flags: Flags,
 
     /// The type of the page
     pub class: Class,
@@ -21,19 +21,20 @@ pub struct SecInfo {
 }
 
 impl core::fmt::Debug for SecInfo {
+    #[inline]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("SecInfo")
             .field("class", &self.class)
-            .field("perms", &self.perms)
+            .field("flags", &self.flags)
             .finish()
     }
 }
 
 impl SecInfo {
     /// Creates a SecInfo (page) of class type Regular.
-    pub const fn reg(perms: Perms) -> Self {
+    pub const fn reg(flags: Flags) -> Self {
         Self {
-            perms,
+            flags,
             class: Class::Reg,
             reserved: [0; 31],
         }
@@ -42,7 +43,7 @@ impl SecInfo {
     /// Creates a SecInfo (page) of class type TCS.
     pub const fn tcs() -> Self {
         Self {
-            perms: Perms::empty(),
+            flags: Flags::empty(),
             class: Class::Tcs,
             reserved: [0; 31],
         }
@@ -52,7 +53,7 @@ impl SecInfo {
 #[cfg(test)]
 testaso! {
     struct SecInfo: 64, 64 => {
-        perms: 0,
+        flags: 0,
         class: 1
     }
 }
