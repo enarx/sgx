@@ -76,6 +76,7 @@ macro_rules! testaso {
 pub mod crypto;
 pub mod page;
 pub mod parameters;
+pub mod platform;
 pub mod signature;
 pub mod ssa;
 
