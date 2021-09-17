@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Page SecInfo (Section 38.11)
-//! These structs specify metadata about en enclave page.
+//! Page-related structures
+//!
+//! The most important structures in thie module are:
+//!   1. `Secs`: controls enclave features during creation
+//!   2. `SecInfo`: controls access permissions for enclave pages
 
 mod class;
 mod perms;
