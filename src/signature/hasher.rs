@@ -84,7 +84,7 @@ impl<T: Digest> Hasher<T> {
 
 #[cfg(test)]
 mod test {
-    use std::num::NonZeroU32;
+    use core::num::NonZeroU32;
 
     use super::{Hasher, InvalidSize};
     use crate::crypto::Digest;
@@ -111,7 +111,7 @@ mod test {
         let pages = NonZeroU32::new(1).unwrap();
         let mut hasher = Hasher::<Dummy>::new(1 << 20, pages);
 
-        let buf = vec![0; 4096];
+        let buf = [0; 4096];
         for i in 1..4096 {
             assert_eq!(
                 hasher.load(&buf[i..], 0, SecInfo::tcs(), true),

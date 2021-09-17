@@ -61,22 +61,6 @@ impl Signature {
     pub fn body(&self) -> Body {
         self.body
     }
-
-    /// Read a `Signature` from a file
-    #[cfg(any(test, feature = "std"))]
-    pub fn read_from(mut reader: impl std::io::Read) -> std::io::Result<Self> {
-        // # Safety
-        //
-        // This code is safe because we never read from the slice before it is
-        // fully written to.
-
-        let mut sig = std::mem::MaybeUninit::<Signature>::uninit();
-        let ptr = sig.as_mut_ptr() as *mut u8;
-        let len = std::mem::size_of_val(&sig);
-        let buf = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-        reader.read_exact(buf).unwrap();
-        unsafe { Ok(sig.assume_init()) }
-    }
 }
 
 #[cfg(test)]

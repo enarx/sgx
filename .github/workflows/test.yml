@@ -24,10 +24,7 @@ jobs:
           - nightly
         features:
           -
-          - std
           - openssl
-          - std,openssl
-          - std,openssl
         profile:
           - {name: debug}
           - {name: release, flag: --release}
@@ -39,22 +36,10 @@ jobs:
             features: rcrypto
             profile: {name: release, flag: --release}
           - toolchain: nightly
-            features: rcrypto,std
-            profile: {name: debug}
-          - toolchain: nightly
-            features: rcrypto,std
-            profile: {name: release, flag: --release}
-          - toolchain: nightly
             features: rcrypto,openssl
             profile: {name: debug}
           - toolchain: nightly
             features: rcrypto,openssl
-            profile: {name: release, flag: --release}
-          - toolchain: nightly
-            features: rcrypto,std,openssl
-            profile: {name: debug}
-          - toolchain: nightly
-            features: rcrypto,std,openssl
             profile: {name: release, flag: --release}
 
   hw:
