@@ -35,7 +35,7 @@ where
     fn from(value: T) -> Self {
         Self {
             data: value,
-            mask: value | !value,
+            mask: value,
         }
     }
 }
