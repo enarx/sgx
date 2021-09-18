@@ -57,7 +57,8 @@ fn selftest<K: PrivateKey, D: Digest<Output = [u8; 32]>>() {
     use core::num::NonZeroU32;
 
     use crate::page::{Flags, SecInfo};
-    use crate::signature::{Hasher, Signature};
+    use crate::parameters::{Attributes, Features, Masked, Parameters, Xfrm};
+    use crate::signature::{Author, Hasher, Signature};
 
     let len = BIN.len().next_power_of_two();
     let sig: Signature = unsafe { transmute(*SIG) };
@@ -70,7 +71,21 @@ fn selftest<K: PrivateKey, D: Digest<Output = [u8; 32]>>() {
     let mrenclave = h.finish();
     assert_eq!(sig.body().mrenclave(), mrenclave);
 
+    // Validate object construction
+    let parameters = Parameters {
+        attr: Masked {
+            data: Attributes::new(Features::MODE64BIT, Xfrm::X87 | Xfrm::SSE),
+            mask: Attributes::new(Features::empty(), Xfrm::empty()),
+        },
+        ..Default::default()
+    };
+    let body = parameters.body(mrenclave);
+    assert_eq!(Author::new(0, 0), sig.author());
+    assert_eq!(parameters, sig.body().parameters());
+    assert_eq!(parameters.body(mrenclave), sig.body());
+
     // Validate signature generation
     let key = K::from_pem(PEM).unwrap();
     assert_eq!(sig, Signature::new(&key, sig.author(), sig.body()).unwrap());
+    assert_eq!(sig, Signature::new(&key, Author::new(0, 0), body).unwrap());
 }
