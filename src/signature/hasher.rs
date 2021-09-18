@@ -7,7 +7,7 @@ use core::slice::from_raw_parts;
 
 /// Input length is not a multiple of the page size
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct InvalidSize;
+pub struct InvalidSize(());
 
 /// Hashes an enclave producing a measurement
 ///
@@ -55,7 +55,7 @@ impl<T: Digest> Hasher<T> {
         const PAGE: usize = 4096;
 
         if pages.len() % PAGE != 0 {
-            return Err(InvalidSize);
+            return Err(InvalidSize(()));
         }
 
         // For each page in the input...
@@ -123,7 +123,7 @@ mod test {
         for i in 1..4096 {
             assert_eq!(
                 hasher.load(&buf[i..], 0, SecInfo::tcs(), true),
-                Err(InvalidSize)
+                Err(InvalidSize(()))
             );
         }
 
