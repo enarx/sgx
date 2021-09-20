@@ -39,7 +39,7 @@ bitflags::bitflags! {
 /// contexts. For example, when creating an `Secs` page, the mask represents
 /// the platform-supported features. Likewise, when creating a `Signature`
 /// the mask represents the required features for the enclave.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub struct Parameters {
     /// Choose info for the `Misc` section of the `StateSaveArea`
     pub misc: Masked<MiscSelect>,
