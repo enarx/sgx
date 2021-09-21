@@ -22,7 +22,6 @@ is-it-maintained-open-issues = { repository = "enarx/sgx" }
 
 [features]
 rcrypto = ["rand", "rsa", "sha2", "num-integer", "num-traits"]
-std = []
 
 [dependencies]
 x86_64 = { version = "^0.14.6", default-features = false }
