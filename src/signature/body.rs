@@ -18,8 +18,8 @@ impl Parameters {
             attr: self.attr,
             mrenclave,
             reserved1: [0; 32],
-            isv_prod_id: self.isv_prod_id,
-            isv_svn: self.isv_svn,
+            pid: self.pid,
+            svn: self.svn,
         }
     }
 }
@@ -37,8 +37,8 @@ pub struct Body {
     attr: Masked<Attributes>,
     mrenclave: [u8; 32],
     reserved1: [u8; 32],
-    isv_prod_id: u16,
-    isv_svn: u16,
+    pid: u16,
+    svn: u16,
 }
 
 impl core::fmt::Debug for Body {
@@ -49,8 +49,8 @@ impl core::fmt::Debug for Body {
             .field("attr", &self.attr)
             .field("mrenclave", &self.mrenclave)
             //.field("reserved1", &self.reserved1)
-            .field("isv_prod_id", &self.isv_prod_id)
-            .field("isv_svn", &self.isv_svn)
+            .field("pid", &self.pid)
+            .field("svn", &self.svn)
             .finish()
     }
 }
@@ -64,8 +64,8 @@ impl Body {
     /// Get the enclave parameters
     pub fn parameters(&self) -> Parameters {
         Parameters {
-            isv_prod_id: self.isv_prod_id,
-            isv_svn: self.isv_svn,
+            pid: self.pid,
+            svn: self.svn,
             misc: self.misc,
             attr: self.attr,
         }
@@ -80,7 +80,7 @@ testaso! {
         attr: 28,
         mrenclave: 60,
         reserved1: 92,
-        isv_prod_id: 124,
-        isv_svn: 126
+        pid: 124,
+        svn: 126
     }
 }
