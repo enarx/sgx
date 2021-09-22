@@ -49,8 +49,8 @@ pub struct Parameters {
     pub attr: Masked<Attributes>,
 
     /// ISV-defined product identifier
-    pub isv_prod_id: u16,
+    pub pid: u16,
 
     /// ISV-defined security version number
-    pub isv_svn: u16,
+    pub svn: u16,
 }

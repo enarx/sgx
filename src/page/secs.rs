@@ -27,8 +27,8 @@ impl Parameters {
             reserved1: [0; 32],
             mrsigner: [0; 32],
             reserved2: [0; 12],
-            isv_prod_id: self.isv_prod_id,
-            isv_svn: self.isv_svn,
+            pid: self.pid,
+            svn: self.svn,
             reserved3: [0; 7],
             reserved4: [[0; 28]; 17],
         }
@@ -52,8 +52,8 @@ pub struct Secs {
     reserved1: [u8; 32],
     mrsigner: [u8; 32],
     reserved2: [u64; 12],
-    isv_prod_id: u16,
-    isv_svn: u16,
+    pid: u16,
+    svn: u16,
     reserved3: [u32; 7],
     reserved4: [[u64; 28]; 17],
 }
@@ -71,8 +71,8 @@ testaso! {
         reserved1: 96,
         mrsigner: 128,
         reserved2: 160,
-        isv_prod_id: 256,
-        isv_svn: 258,
+        pid: 256,
+        svn: 258,
         reserved3: 260,
         reserved4: 288
     }
