@@ -90,9 +90,6 @@ pub mod parameters;
 pub mod signature;
 pub mod ssa;
 
-#[cfg(target_arch = "x86_64")]
-pub mod platform;
-
 /// SGX ENCLU Leaf Instructions
 pub mod enclu {
     pub const EREPORT: usize = 0x00;
