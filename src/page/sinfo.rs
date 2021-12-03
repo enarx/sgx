@@ -26,6 +26,19 @@ impl core::fmt::Debug for SecInfo {
     }
 }
 
+impl core::fmt::Display for SecInfo {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self.class {
+            Class::Secs => write!(f, "S"),
+            Class::Tcs => write!(f, "T"),
+            Class::Reg => write!(f, "{}", self.flags),
+            Class::Va => write!(f, "V"),
+            Class::Trim => write!(f, "^"),
+        }
+    }
+}
+
 impl SecInfo {
     /// Creates a `SecInfo` instance for regular pages
     pub const fn reg(flags: Flags) -> Self {
@@ -61,5 +74,37 @@ testaso! {
     struct SecInfo: 64, 64 => {
         flags: 0,
         class: 1
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn display() {
+        assert_eq!(format!("{}", SecInfo::tcs()), "T");
+        assert_eq!(format!("{}", SecInfo::reg(Flags::READ)), "R");
+        assert_eq!(format!("{}", SecInfo::reg(Flags::WRITE)), "W");
+        assert_eq!(format!("{}", SecInfo::reg(Flags::EXECUTE)), "X");
+        assert_eq!(
+            format!("{}", SecInfo::reg(Flags::READ | Flags::WRITE)),
+            "RW"
+        );
+        assert_eq!(
+            format!("{}", SecInfo::reg(Flags::READ | Flags::EXECUTE)),
+            "RX"
+        );
+        assert_eq!(
+            format!("{}", SecInfo::reg(Flags::WRITE | Flags::EXECUTE)),
+            "WX"
+        );
+        assert_eq!(
+            format!(
+                "{}",
+                SecInfo::reg(Flags::READ | Flags::WRITE | Flags::EXECUTE)
+            ),
+            "RWX"
+        );
     }
 }
