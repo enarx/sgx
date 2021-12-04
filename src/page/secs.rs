@@ -39,7 +39,7 @@ impl Parameters {
 ///
 /// The contents of `Secs` are entirely opaque as this type is passed directly
 /// to the hardware during enclave creation and never user readable.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 #[repr(C, align(4096))]
 pub struct Secs {
     size: u64,
@@ -56,6 +56,20 @@ pub struct Secs {
     svn: u16,
     reserved3: [u32; 7],
     reserved4: [[u64; 28]; 17],
+}
+
+impl core::fmt::Debug for Secs {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Secs")
+            .field("size", &self.size)
+            .field("baseaddr", &self.baseaddr)
+            .field("ssaframesize", &self.ssaframesize)
+            .field("miscselect", &self.miscselect)
+            .field("attributes", &self.attributes)
+            .field("pid", &self.pid)
+            .field("svn", &self.svn)
+            .finish()
+    }
 }
 
 #[cfg(test)]
