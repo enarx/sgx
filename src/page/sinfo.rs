@@ -2,6 +2,8 @@
 
 use super::{Class, Flags};
 
+use core::arch::asm;
+
 /// The security information about a page
 ///
 /// This structure encodes the security information about one or more pages.
@@ -66,6 +68,55 @@ impl SecInfo {
     /// Get the class
     pub const fn class(&self) -> Class {
         self.class
+    }
+
+    /// Execute EACCEPT.
+    pub fn accept(&self, dest: *const u8) {
+        unsafe {
+            asm!(
+                "xchg       {RBX}, rbx",
+                "enclu",
+                "mov        rbx, {RBX}",
+
+                RBX = inout(reg) self => _,
+                in("rax") crate::enclu::EACCEPT,
+                in("rcx") dest,
+            );
+        }
+    }
+
+    /// Execute EACCEPTCOPY. Not supported on Shadow Stack (SS) pages.
+    pub fn accept_copy(&self, dest: *const u8, src: *const u8) {
+        unsafe {
+            asm!(
+                "xchg       {RBX}, rbx",
+                "enclu",
+                "mov        rbx, {RBX}",
+
+                RBX = inout(reg) self => _,
+                in("rax") crate::enclu::EACCEPTCOPY,
+                in("rcx") dest,
+                in("rdx") src,
+            );
+        }
+    }
+
+    /// Execute EMODPE. Not supported on Shadow Stack (SS) pages.
+    ///
+    /// EPCM permissions must be PROT_NONE for this to work always without
+    /// failure, as EMODPE can only extend the protection bits.
+    pub fn protect(&self, dest: *const u8) {
+        unsafe {
+            asm!(
+                "xchg       {RBX}, rbx",
+                "enclu",
+                "mov        rbx, {RBX}",
+
+                RBX = inout(reg) self => _,
+                in("rax") crate::enclu::EMODPE,
+                in("rcx") dest,
+            );
+        }
     }
 }
 
