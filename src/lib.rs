@@ -85,6 +85,7 @@ macro_rules! testaso {
 //pub mod attestation_types;
 
 pub mod crypto;
+pub mod ioctls;
 pub mod page;
 pub mod parameters;
 pub mod signature;
