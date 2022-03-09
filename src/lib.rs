@@ -85,6 +85,8 @@ macro_rules! testaso {
 //pub mod attestation_types;
 
 pub mod crypto;
+#[cfg(feature = "iocuddle")]
+pub mod ioctls;
 pub mod page;
 pub mod parameters;
 pub mod signature;
