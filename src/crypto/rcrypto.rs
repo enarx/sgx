@@ -66,6 +66,8 @@ impl super::PrivateKey for RS256PrivateKey {
     }
 
     fn sign(&self, author: &[u8], body: &[u8]) -> Result<super::SigData, Self::Error> {
+        use sha2::digest::Update;
+
         let hash = Sha256::new().chain(author).chain(body).finalize();
 
         let mut signature = [0u8; 384];
