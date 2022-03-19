@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::{Class, Flags};
+use crate::enclu::{EACCEPT, EACCEPTCOPY, EMODPE};
+
+use core::arch::asm;
+
+use x86_64::structures::paging::Page;
 
 /// The security information about a page
 ///
@@ -47,20 +52,24 @@ impl From<Class> for SecInfo {
     }
 }
 
+/// Error codes for `SecInfo::accept()`
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum AcceptError {
+    /// CPU cores have not exited from the previous grace period.
+    PageNotTracked,
+    /// Attributes of the destination page are incorrect.
+    PageAttributesMismatch,
+}
+
 impl SecInfo {
     /// Create a new instance.
     #[inline]
     pub fn new(class: Class, flags: impl Into<Option<Flags>>) -> SecInfo {
-        let flags = match flags.into() {
-            Some(flags) => flags,
-            None => {
-                match class {
-                    // A CPU constraint
-                    Class::Regular => Flags::READ,
-                    _ => Flags::empty(),
-                }
-            }
-        };
+        let flags = flags.into().unwrap_or_else(|| match class {
+            // A CPU constraint for SGX2 instructions
+            Class::Regular => Flags::READ,
+            _ => Flags::empty(),
+        });
 
         Self {
             class,
@@ -77,6 +86,74 @@ impl SecInfo {
     /// Get the class
     pub const fn class(&self) -> Class {
         self.class
+    }
+
+    /// Acknowledge ENCLS[EAUG], ENCLS[EMODT] and ENCLS[EMODPR] from the host.
+    #[inline]
+    pub fn accept(&self, dest: Page) -> Result<(), AcceptError> {
+        let ret;
+
+        unsafe {
+            asm!(
+                "xchg       {RBX}, rbx",
+                "enclu",
+                "mov        rbx, {RBX}",
+
+                RBX = inout(reg) self => _,
+                in("rax") EACCEPT,
+                in("rcx") dest.start_address().as_u64(),
+                lateout("rax") ret,
+            );
+        }
+
+        match ret {
+            0 => Ok(()),
+            11 => Err(AcceptError::PageNotTracked),
+            19 => Err(AcceptError::PageAttributesMismatch),
+            ret => panic!("EACCEPT returned an unknown error code: {}", ret),
+        }
+    }
+
+    /// Acknowledge ENCLS[EAUG] from the host.
+    #[inline]
+    pub fn accept_copy(&self, dest: Page, src: Page) -> Result<(), AcceptError> {
+        let ret;
+
+        unsafe {
+            asm!(
+                "xchg       {RBX}, rbx",
+                "enclu",
+                "mov        rbx, {RBX}",
+
+                RBX = inout(reg) self => _,
+                in("rax") EACCEPTCOPY,
+                in("rcx") dest.start_address().as_u64(),
+                in("rdx") src.start_address().as_u64(),
+                lateout("rax") ret,
+            );
+        }
+
+        match ret {
+            0 => Ok(()),
+            19 => Err(AcceptError::PageAttributesMismatch),
+            ret => panic!("EACCEPTCOPY returned an unknown error code: {}", ret),
+        }
+    }
+
+    /// Extend page permissions.
+    #[inline]
+    pub fn extend_permissions(&self, dest: Page) {
+        unsafe {
+            asm!(
+                "xchg       {RBX}, rbx",
+                "enclu",
+                "mov        rbx, {RBX}",
+
+                RBX = inout(reg) self => _,
+                in("rax") EMODPE,
+                in("rcx") dest.start_address().as_u64(),
+            );
+        }
     }
 }
 
