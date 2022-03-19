@@ -32,28 +32,39 @@ impl core::fmt::Display for SecInfo {
         match self.class {
             Class::Secs => write!(f, "S"),
             Class::Tcs => write!(f, "T"),
-            Class::Reg => write!(f, "{}", self.flags),
-            Class::Va => write!(f, "V"),
-            Class::Trim => write!(f, "^"),
+            Class::Regular => write!(f, "{}", self.flags),
+            Class::VersionArray => write!(f, "V"),
+            Class::Trimmed => write!(f, "^"),
+            Class::ShadowStackFirst => write!(f, "F"),
+            Class::ShadowStackRest => write!(f, "R"),
         }
     }
 }
 
-impl SecInfo {
-    /// Creates a `SecInfo` instance for regular pages
-    pub const fn reg(flags: Flags) -> Self {
-        Self {
-            flags,
-            class: Class::Reg,
-            reserved: [0; 31],
-        }
+impl From<Class> for SecInfo {
+    fn from(class: Class) -> Self {
+        SecInfo::new(class, None)
     }
+}
 
-    /// Creates a `SecInfo` instance for TCS pages
-    pub const fn tcs() -> Self {
+impl SecInfo {
+    /// Create a new instance.
+    #[inline]
+    pub fn new(class: Class, flags: impl Into<Option<Flags>>) -> SecInfo {
+        let flags = match flags.into() {
+            Some(flags) => flags,
+            None => {
+                match class {
+                    // A CPU constraint
+                    Class::Regular => Flags::READ,
+                    _ => Flags::empty(),
+                }
+            }
+        };
+
         Self {
-            flags: Flags::empty(),
-            class: Class::Tcs,
+            class,
+            flags,
             reserved: [0; 31],
         }
     }
@@ -83,26 +94,26 @@ mod test {
 
     #[test]
     fn display() {
-        assert_eq!(format!("{}", SecInfo::tcs()), "T");
-        assert_eq!(format!("{}", SecInfo::reg(Flags::READ)), "R");
-        assert_eq!(format!("{}", SecInfo::reg(Flags::WRITE)), "W");
-        assert_eq!(format!("{}", SecInfo::reg(Flags::EXECUTE)), "X");
+        assert_eq!(format!("{}", SecInfo::from(Class::Tcs)), "T");
+        assert_eq!(format!("{}", SecInfo::from(Class::Regular)), "R");
+        assert_eq!(format!("{}", Class::Regular.info(Flags::WRITE)), "W");
+        assert_eq!(format!("{}", Class::Regular.info(Flags::EXECUTE)), "X");
         assert_eq!(
-            format!("{}", SecInfo::reg(Flags::READ | Flags::WRITE)),
+            format!("{}", Class::Regular.info(Flags::READ | Flags::WRITE)),
             "RW"
         );
         assert_eq!(
-            format!("{}", SecInfo::reg(Flags::READ | Flags::EXECUTE)),
+            format!("{}", Class::Regular.info(Flags::READ | Flags::EXECUTE)),
             "RX"
         );
         assert_eq!(
-            format!("{}", SecInfo::reg(Flags::WRITE | Flags::EXECUTE)),
+            format!("{}", Class::Regular.info(Flags::WRITE | Flags::EXECUTE)),
             "WX"
         );
         assert_eq!(
             format!(
                 "{}",
-                SecInfo::reg(Flags::READ | Flags::WRITE | Flags::EXECUTE)
+                Class::Regular.info(Flags::READ | Flags::WRITE | Flags::EXECUTE)
             ),
             "RWX"
         );

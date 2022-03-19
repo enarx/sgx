@@ -96,7 +96,7 @@ mod test {
 
     use super::{Hasher, InvalidSize};
     use crate::crypto::Digest;
-    use crate::page::SecInfo;
+    use crate::page::{Class, SecInfo};
 
     struct Dummy;
 
@@ -122,11 +122,14 @@ mod test {
         let buf = [0; 4096];
         for i in 1..4096 {
             assert_eq!(
-                hasher.load(&buf[i..], 0, SecInfo::tcs(), true),
+                hasher.load(&buf[i..], 0, SecInfo::from(Class::Tcs), true),
                 Err(InvalidSize(()))
             );
         }
 
-        assert_eq!(hasher.load(&buf, 0, SecInfo::tcs(), true), Ok(()));
+        assert_eq!(
+            hasher.load(&buf, 0, SecInfo::from(Class::Tcs), true),
+            Ok(())
+        );
     }
 }

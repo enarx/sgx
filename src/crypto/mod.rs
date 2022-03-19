@@ -56,7 +56,7 @@ fn selftest<K: PrivateKey, D: Digest<Output = [u8; 32]>>() {
     use core::mem::{size_of, transmute};
     use core::num::NonZeroU32;
 
-    use crate::page::{Flags, SecInfo};
+    use crate::page::{Class, Flags, SecInfo};
     use crate::parameters::{Attributes, Features, Masked, Parameters, Xfrm};
     use crate::signature::{Author, Hasher, Signature};
 
@@ -66,8 +66,10 @@ fn selftest<K: PrivateKey, D: Digest<Output = [u8; 32]>>() {
 
     // Validate hash generation
     let mut h = Hasher::<D>::new(len, NonZeroU32::new(1).unwrap());
-    h.load(&BIN[..PAGE], 0, SecInfo::tcs(), true).unwrap();
-    h.load(&BIN[PAGE..], PAGE, SecInfo::reg(rwx), true).unwrap();
+    h.load(&BIN[..PAGE], 0, SecInfo::from(Class::Tcs), true)
+        .unwrap();
+    h.load(&BIN[PAGE..], PAGE, Class::Regular.info(rwx), true)
+        .unwrap();
     let mrenclave = h.finish();
     assert_eq!(sig.body().mrenclave(), mrenclave);
 
