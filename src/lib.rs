@@ -15,7 +15,7 @@
 //!      `parameters` and `page` modules. However, you may also want the
 //!      `signature` module to load a signature.
 
-#![cfg_attr(not(test), no_std)]
+#![no_std]
 #![deny(clippy::exhaustive_enums)]
 #![deny(clippy::all)]
 
@@ -81,6 +81,10 @@ macro_rules! testaso {
         }
     };
 }
+
+#[cfg(test)]
+#[macro_use]
+extern crate std;
 
 //pub mod attestation_types;
 
