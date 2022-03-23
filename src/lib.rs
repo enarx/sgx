@@ -14,6 +14,8 @@
 //!   3. If you are developing an enclave loader, you probably want the
 //!      `parameters` and `page` modules. However, you may also want the
 //!      `signature` module to load a signature.
+//!   4. If you are interested in quote parsing and validation, you probably
+//!      want the `quote` module.
 
 #![cfg_attr(not(test), no_std)]
 #![deny(clippy::exhaustive_enums)]
@@ -87,6 +89,7 @@ macro_rules! testaso {
 pub mod crypto;
 pub mod page;
 pub mod parameters;
+pub mod quote;
 pub mod signature;
 pub mod ssa;
 
