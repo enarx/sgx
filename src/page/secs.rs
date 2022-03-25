@@ -73,21 +73,26 @@ impl core::fmt::Debug for Secs {
 }
 
 #[cfg(test)]
-testaso! {
-    struct Secs: 4096, 4096 => {
-        size: 0,
-        baseaddr: 8,
-        ssaframesize: 16,
-        miscselect: 20,
-        reserved0: 24,
-        attributes: 48,
-        mrenclave: 64,
-        reserved1: 96,
-        mrsigner: 128,
-        reserved2: 160,
-        pid: 256,
-        svn: 258,
-        reserved3: 260,
-        reserved4: 288
+mod test {
+    use super::Secs;
+    use testaso::testaso;
+
+    testaso! {
+        struct Secs: 4096, 4096 => {
+            size: 0,
+            baseaddr: 8,
+            ssaframesize: 16,
+            miscselect: 20,
+            reserved0: 24,
+            attributes: 48,
+            mrenclave: 64,
+            reserved1: 96,
+            mrsigner: 128,
+            reserved2: 160,
+            pid: 256,
+            svn: 258,
+            reserved3: 260,
+            reserved4: 288
+        }
     }
 }

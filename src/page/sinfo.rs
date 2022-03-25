@@ -158,16 +158,16 @@ impl SecInfo {
 }
 
 #[cfg(test)]
-testaso! {
-    struct SecInfo: 64, 64 => {
-        flags: 0,
-        class: 1
-    }
-}
-
-#[cfg(test)]
 mod test {
     use super::*;
+    use testaso::testaso;
+
+    testaso! {
+        struct SecInfo: 64, 64 => {
+            flags: 0,
+            class: 1
+        }
+    }
 
     #[test]
     fn display() {

@@ -48,20 +48,20 @@ impl Author {
 }
 
 #[cfg(test)]
-testaso! {
-    struct Author: 4, 128 => {
-        header1: 0,
-        vendor: 16,
-        date: 20,
-        header2: 24,
-        swdefined: 40,
-        reserved: 44
-    }
-}
-
-#[cfg(test)]
 mod test {
     use super::Author;
+    use testaso::testaso;
+
+    testaso! {
+        struct Author: 4, 128 => {
+            header1: 0,
+            vendor: 16,
+            date: 20,
+            header2: 24,
+            swdefined: 40,
+            reserved: 44
+        }
+    }
 
     #[test]
     fn author_instantiation() {

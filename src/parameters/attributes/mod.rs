@@ -237,6 +237,11 @@ impl BitXorAssign<Xfrm> for Attributes {
 }
 
 #[cfg(test)]
-testaso! {
-    struct Attributes: 4, 16 => {}
+mod test {
+    use super::Attributes;
+    use testaso::testaso;
+
+    testaso! {
+        struct Attributes: 4, 16 => {}
+    }
 }
