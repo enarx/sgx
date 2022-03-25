@@ -116,48 +116,53 @@ impl<T> StateSaveArea<T> {
 }
 
 #[cfg(test)]
-testaso! {
-    struct GenPurposeRegs: 8, 184 => {
-        rax: 0,
-        rcx: 8,
-        rdx: 16,
-        rbx: 24,
-        rsp: 32,
-        rbp: 40,
-        rsi: 48,
-        rdi: 56,
-        r8: 64,
-        r9: 72,
-        r10: 80,
-        r11: 88,
-        r12: 96,
-        r13: 104,
-        r14: 112,
-        r15: 120,
-        rflags: 128,
-        rip: 136,
-        ursp: 144,
-        urbp: 152,
-        exitinfo: 160,
-        reserved: 164,
-        fsbase: 168,
-        gsbase: 176
-    }
+mod test {
+    use super::*;
+    use testaso::testaso;
 
-    struct ExInfo: 8, 16 => {
-        maddr: 0,
-        errcd: 8,
-        reserved: 12
-    }
+    testaso! {
+        struct GenPurposeRegs: 8, 184 => {
+            rax: 0,
+            rcx: 8,
+            rdx: 16,
+            rbx: 24,
+            rsp: 32,
+            rbp: 40,
+            rsi: 48,
+            rdi: 56,
+            r8: 64,
+            r9: 72,
+            r10: 80,
+            r11: 88,
+            r12: 96,
+            r13: 104,
+            r14: 112,
+            r15: 120,
+            rflags: 128,
+            rip: 136,
+            ursp: 144,
+            urbp: 152,
+            exitinfo: 160,
+            reserved: 164,
+            fsbase: 168,
+            gsbase: 176
+        }
 
-    struct Misc: 8, 16 => {
-        exinfo: 0
-    }
+        struct ExInfo: 8, 16 => {
+            maddr: 0,
+            errcd: 8,
+            reserved: 12
+        }
 
-    struct StateSaveArea<[u8; 824]>: 4096, 4096 => {
-        xsave: 0,
-        extra: 3072,
-        misc: 3896,
-        gpr: 3912
+        struct Misc: 8, 16 => {
+            exinfo: 0
+        }
+
+        struct StateSaveArea<[u8; 824]>: 4096, 4096 => {
+            xsave: 0,
+            extra: 3072,
+            misc: 3896,
+            gpr: 3912
+        }
     }
 }

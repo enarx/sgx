@@ -70,15 +70,20 @@ impl Signature {
 }
 
 #[cfg(test)]
-testaso! {
-    struct Signature: 4, 1808 => {
-        author: 0,
-        modulus: 128,
-        exponent: 512,
-        signature: 516,
-        body: 900,
-        reserved: 1028,
-        q1: 1040,
-        q2: 1424
+mod test {
+    use super::Signature;
+    use testaso::testaso;
+
+    testaso! {
+        struct Signature: 4, 1808 => {
+            author: 0,
+            modulus: 128,
+            exponent: 512,
+            signature: 516,
+            body: 900,
+            reserved: 1028,
+            q1: 1040,
+            q2: 1424
+        }
     }
 }

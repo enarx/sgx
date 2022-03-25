@@ -73,14 +73,19 @@ impl Body {
 }
 
 #[cfg(test)]
-testaso! {
-    struct Body: 4, 128 => {
-        misc: 0,
-        reserved0: 8,
-        attr: 28,
-        mrenclave: 60,
-        reserved1: 92,
-        pid: 124,
-        svn: 126
+mod test {
+    use super::Body;
+    use testaso::testaso;
+
+    testaso! {
+        struct Body: 4, 128 => {
+            misc: 0,
+            reserved0: 8,
+            attr: 28,
+            mrenclave: 60,
+            reserved1: 92,
+            pid: 124,
+            svn: 126
+        }
     }
 }
