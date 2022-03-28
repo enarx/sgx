@@ -11,6 +11,7 @@ pub mod openssl;
 #[cfg(feature = "rcrypto")]
 pub mod rcrypto;
 
+use core::mem::{size_of, transmute};
 use der::{asn1::UIntBytes, Encodable, Sequence};
 
 /// A fixed-size hash
@@ -58,6 +59,12 @@ pub struct EcdsaPubKey {
     pub y: [u8; 32],
 }
 
+impl<'a> From<&'a [u8; size_of::<EcdsaPubKey>()]> for &'a EcdsaPubKey {
+    fn from(bytes: &'a [u8; size_of::<EcdsaPubKey>()]) -> Self {
+        unsafe { transmute(bytes) }
+    }
+}
+
 /// ECDSA signature, the r component followed by the
 /// s component, 2 x 32 bytes.
 /// A.4, Table 6
@@ -66,6 +73,12 @@ pub struct EcdsaPubKey {
 pub struct EcdsaP256Sig {
     pub r: [u8; 32],
     pub s: [u8; 32],
+}
+
+impl<'a> From<&'a [u8; size_of::<EcdsaP256Sig>()]> for &'a EcdsaP256Sig {
+    fn from(bytes: &'a [u8; size_of::<EcdsaP256Sig>()]) -> Self {
+        unsafe { transmute(bytes) }
+    }
 }
 
 impl EcdsaP256Sig {
@@ -107,7 +120,6 @@ fn selftest<K: PrivateKey, D: Digest<Output = [u8; 32]>>() {
     const PEM: &str = include_str!("../../tests/encl.pem");
     const PAGE: usize = 4096;
 
-    use core::mem::{size_of, transmute};
     use core::num::NonZeroU32;
 
     use crate::page::{Class, Flags, SecInfo};
