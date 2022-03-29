@@ -13,6 +13,10 @@ pub enum QuoteError {
     InvalidFeatures,
     InvalidXfrm,
     UnknownCertDataType,
+    #[cfg(feature = "quote-cert-chain")]
+    UnsupportedCertDataType(&'static str),
+    #[cfg(feature = "quote-cert-chain")]
+    CertChainParse(String),
 }
 
 impl Display for QuoteError {
@@ -39,6 +43,14 @@ impl Display for QuoteError {
             }
             QuoteError::UnknownCertDataType => {
                 write!(f, "Unknown cert data type",)
+            }
+            #[cfg(feature = "quote-cert-chain")]
+            QuoteError::UnsupportedCertDataType(message) => {
+                write!(f, "Unsupported certificate data type: {}", message)
+            }
+            #[cfg(feature = "quote-cert-chain")]
+            QuoteError::CertChainParse(message) => {
+                write!(f, "Certificate chain parse error: {}", message)
             }
         }
     }

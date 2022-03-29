@@ -17,7 +17,7 @@
 //!   4. If you are interested in quote parsing and validation, you probably
 //!      want the `quote` module.
 
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![deny(clippy::exhaustive_enums)]
 #![deny(clippy::all)]
 

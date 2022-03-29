@@ -163,4 +163,24 @@ impl<'a> SigData<'a> {
     pub fn qe_cert_data(&self) -> &'a [u8] {
         self.qe_cert_data
     }
+
+    /// Get the certificate chain.
+    #[cfg(feature = "quote-cert-chain")]
+    pub fn qe_cert_chain(&self) -> Result<Vec<Vec<u8>>, QuoteError> {
+        if self.qe_cert_data_type()? != CertDataType::PCKCertChain {
+            return Err(QuoteError::UnsupportedCertDataType(
+                "not a PCK cert chain type",
+            ));
+        }
+
+        let chain = String::from_utf8(self.qe_cert_data().to_vec())
+            .map_err(|e| QuoteError::CertChainParse(e.to_string()))?
+            .replace("-----END CERTIFICATE-----", "-----END CERTIFICATE-----\n");
+
+        let mut certs = rustls_pemfile::certs(&mut chain.as_bytes())
+            .map_err(|e| QuoteError::CertChainParse(e.to_string()))?;
+
+        certs.reverse();
+        Ok(certs)
+    }
 }
