@@ -14,8 +14,6 @@
 //!   3. If you are developing an enclave loader, you probably want the
 //!      `parameters` and `page` modules. However, you may also want the
 //!      `signature` module to load a signature.
-//!   4. If you are interested in quote parsing and validation, you probably
-//!      want the `quote` module.
 
 #![no_std]
 #![deny(clippy::exhaustive_enums)]
@@ -30,7 +28,6 @@ extern crate std;
 pub mod crypto;
 pub mod page;
 pub mod parameters;
-pub mod quote;
 pub mod signature;
 pub mod ssa;
 
