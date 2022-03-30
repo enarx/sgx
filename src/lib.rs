@@ -42,3 +42,7 @@ pub mod enclu {
     pub const EMODPE: usize = 0x06;
     pub const EACCEPTCOPY: usize = 0x07;
 }
+
+mod report;
+
+pub use report::{Report, ReportBody};
