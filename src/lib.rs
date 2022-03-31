@@ -23,8 +23,6 @@
 #[macro_use]
 extern crate std;
 
-//pub mod attestation_types;
-
 pub mod crypto;
 pub mod page;
 pub mod parameters;
