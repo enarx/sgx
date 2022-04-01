@@ -54,6 +54,7 @@ impl From<Class> for SecInfo {
 
 /// Error codes for `SecInfo::accept()`
 #[derive(Copy, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum AcceptError {
     /// CPU cores have not exited from the previous grace period.
     PageNotTracked,
