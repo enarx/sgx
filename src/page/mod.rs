@@ -14,4 +14,5 @@ mod sinfo;
 pub use class::Class;
 pub use flags::Flags;
 pub use secs::Secs;
+pub use sinfo::AcceptError;
 pub use sinfo::SecInfo;
