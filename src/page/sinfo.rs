@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::{Class, Flags};
-use crate::enclu::{EACCEPT, EACCEPTCOPY, EMODPE};
 
-use core::arch::asm;
-
+#[cfg(target_arch = "x86_64")]
 use x86_64::structures::paging::Page;
 
 /// The security information about a page
@@ -91,17 +89,18 @@ impl SecInfo {
 
     /// Acknowledge ENCLS[EAUG], ENCLS[EMODT] and ENCLS[EMODPR] from the host.
     #[inline]
+    #[cfg(target_arch = "x86_64")]
     pub fn accept(&self, dest: Page) -> Result<(), AcceptError> {
         let ret;
 
         unsafe {
-            asm!(
+            core::arch::asm!(
                 "xchg       {RBX}, rbx",
                 "enclu",
                 "mov        rbx, {RBX}",
 
                 RBX = inout(reg) self => _,
-                in("rax") EACCEPT,
+                in("rax") crate::enclu::EACCEPT,
                 in("rcx") dest.start_address().as_u64(),
                 lateout("rax") ret,
             );
@@ -117,17 +116,18 @@ impl SecInfo {
 
     /// Acknowledge ENCLS[EAUG] from the host.
     #[inline]
+    #[cfg(target_arch = "x86_64")]
     pub fn accept_copy(&self, dest: Page, src: Page) -> Result<(), AcceptError> {
         let ret;
 
         unsafe {
-            asm!(
+            core::arch::asm!(
                 "xchg       {RBX}, rbx",
                 "enclu",
                 "mov        rbx, {RBX}",
 
                 RBX = inout(reg) self => _,
-                in("rax") EACCEPTCOPY,
+                in("rax") crate::enclu::EACCEPTCOPY,
                 in("rcx") dest.start_address().as_u64(),
                 in("rdx") src.start_address().as_u64(),
                 lateout("rax") ret,
@@ -143,15 +143,16 @@ impl SecInfo {
 
     /// Extend page permissions.
     #[inline]
+    #[cfg(target_arch = "x86_64")]
     pub fn extend_permissions(&self, dest: Page) {
         unsafe {
-            asm!(
+            core::arch::asm!(
                 "xchg       {RBX}, rbx",
                 "enclu",
                 "mov        rbx, {RBX}",
 
                 RBX = inout(reg) self => _,
-                in("rax") EMODPE,
+                in("rax") crate::enclu::EMODPE,
                 in("rcx") dest.start_address().as_u64(),
             );
         }
