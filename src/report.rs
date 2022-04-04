@@ -2,6 +2,8 @@
 
 //! Intel SGX Enclave report structures.
 
+use core::{intrinsics::transmute, mem::size_of};
+
 use crate::parameters::{Attributes, Features, MiscSelect, Xfrm};
 
 /// The enclave report body.
@@ -18,35 +20,56 @@ use crate::parameters::{Attributes, Features, MiscSelect, Xfrm};
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct ReportBody {
-    cpusvn: [u8; 16],
+    pub cpusvn: [u8; 16],
     miscselect: [u8; 4],
     reserved1: [u8; 28],
-    // The attributes field is composed of the features and xfrm fields.
     features: [u8; 8],
     xfrm: [u8; 8],
-    mrenclave: [u8; 32],
+    pub mrenclave: [u8; 32],
     reserved2: [u8; 32],
-    mrsigner: [u8; 32],
+    pub mrsigner: [u8; 32],
     reserved3: [u8; 96],
     isv_prodid: [u8; 2],
     isv_svn: [u8; 2],
     reserved4: [u8; 60],
-    reportdata: [u8; 64],
+    pub reportdata: [u8; 64],
+}
+
+// SAFETY: This is safe because `ReportBody` has 1-byte alignment.
+impl From<[u8; size_of::<ReportBody>()]> for ReportBody {
+    fn from(value: [u8; size_of::<ReportBody>()]) -> Self {
+        unsafe { transmute(value) }
+    }
+}
+
+// SAFETY: This is safe because `ReportBody` has 1-byte alignment.
+impl From<ReportBody> for [u8; size_of::<ReportBody>()] {
+    fn from(value: ReportBody) -> Self {
+        unsafe { transmute(value) }
+    }
+}
+
+// SAFETY: This is safe because `ReportBody` has 1-byte alignment.
+impl<'a> From<&'a [u8; size_of::<ReportBody>()]> for &'a ReportBody {
+    fn from(value: &'a [u8; size_of::<ReportBody>()]) -> Self {
+        unsafe { transmute(value) }
+    }
+}
+
+// SAFETY: This is safe because `ReportBody` has 1-byte alignment.
+impl AsRef<[u8]> for ReportBody {
+    fn as_ref(&self) -> &[u8] {
+        unsafe { transmute::<&Self, &[u8; size_of::<Self>()]>(self) }
+    }
 }
 
 impl ReportBody {
-    /// The SVN (security version number) of the processor.
-    pub fn cpu_security_version(&self) -> [u8; 16] {
-        self.cpusvn
-    }
-
     /// Bit vector specifying which extended features are saved to the MISC region of the
     /// SSA frame when an AEX occurs.
     ///
     /// If it cannot be parsed the raw little endian bytes will be returned instead.
-    pub fn misc_select(&self) -> Result<MiscSelect, [u8; 4]> {
-        let misc_select = u32::from_le_bytes(self.miscselect);
-        MiscSelect::from_bits(misc_select).ok_or(self.miscselect)
+    pub fn misc_select(&self) -> MiscSelect {
+        MiscSelect::from_bits_truncate(u32::from_le_bytes(self.miscselect))
     }
 
     /// Set of flags describing attributes of the enclave.
@@ -60,16 +83,6 @@ impl ReportBody {
         Attributes::new(features, xfrm)
     }
 
-    /// Value of SECS.MRENCLAVE (measurement of the enclave).
-    pub fn enclave_measurement(&self) -> [u8; 32] {
-        self.mrenclave
-    }
-
-    /// Value from SECS.MRSIGNER (hash of the enclave signing key).
-    pub fn enclave_signing_key_hash(&self) -> [u8; 32] {
-        self.mrsigner
-    }
-
     /// ISV assigned Product ID of the enclave.
     pub fn enclave_product_id(&self) -> u16 {
         u16::from_le_bytes(self.isv_prodid)
@@ -78,11 +91,6 @@ impl ReportBody {
     /// ISV assigned SVN (security version number) of the enclave.
     pub fn enclave_security_version(&self) -> u16 {
         u16::from_le_bytes(self.isv_svn)
-    }
-
-    /// Data provided by the user and protected by the reports MAC.
-    pub fn report_data(&self) -> [u8; 64] {
-        self.reportdata
     }
 }
 
@@ -96,26 +104,9 @@ impl ReportBody {
 #[derive(Clone, Debug)]
 #[repr(C, align(512))]
 pub struct Report {
-    body: ReportBody,
-    keyid: [u8; 32],
-    mac: [u8; 16],
-}
-
-impl Report {
-    /// The enclave report body.
-    pub fn body(&self) -> &ReportBody {
-        &self.body
-    }
-
-    /// Value for key wear-out protection.
-    pub fn key_id(&self) -> [u8; 32] {
-        self.keyid
-    }
-
-    /// The MAC (message authentication code) on the report using report key.
-    pub fn mac(&self) -> [u8; 16] {
-        self.mac
-    }
+    pub body: ReportBody,
+    pub keyid: [u8; 32],
+    pub mac: [u8; 16],
 }
 
 #[cfg(test)]
