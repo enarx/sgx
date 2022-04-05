@@ -87,7 +87,7 @@ impl SecInfo {
         self.class
     }
 
-    /// Acknowledge ENCLS[EAUG], ENCLS[EMODT] and ENCLS[EMODPR] from the host.
+    /// Acknowledge `ENCLS[EAUG]`, `ENCLS[EMODT]` and `ENCLS[EMODPR]` from the host.
     #[inline]
     #[cfg(target_arch = "x86_64")]
     pub fn accept(&self, dest: Page) -> Result<(), AcceptError> {
@@ -114,7 +114,7 @@ impl SecInfo {
         }
     }
 
-    /// Acknowledge ENCLS[EAUG] from the host.
+    /// Acknowledge `ENCLS[EAUG]` from the host.
     #[inline]
     #[cfg(target_arch = "x86_64")]
     pub fn accept_copy(&self, dest: Page, src: Page) -> Result<(), AcceptError> {
