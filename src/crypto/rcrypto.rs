@@ -3,7 +3,7 @@
 use num_integer::Integer;
 use num_traits::ToPrimitive;
 use rand::thread_rng;
-use rsa::{pkcs1::FromRsaPrivateKey, BigUint, PaddingScheme, PublicKeyParts, RsaPrivateKey};
+use rsa::{pkcs1::DecodeRsaPrivateKey, BigUint, PaddingScheme, PublicKeyParts, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 
 fn arr_from_big(value: &BigUint) -> [u8; 384] {
