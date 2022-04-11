@@ -4,7 +4,6 @@ version = "0.3.0"
 authors = ["The Enarx Project Developers"]
 license = "Apache-2.0"
 edition = "2021"
-rust = "1.59.0"
 homepage = "https://github.com/enarx/sgx"
 repository = "https://github.com/enarx/sgx"
 description = "Library for Intel SGX"
