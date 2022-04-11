@@ -24,6 +24,8 @@
 extern crate std;
 
 pub mod crypto;
+#[cfg(feature = "iocuddle")]
+pub mod enclave;
 pub mod page;
 pub mod parameters;
 pub mod signature;
