@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 fn arr_from_big(value: &BigUint) -> [u8; 384] {
     let mut arr = [0u8; 384];
     let buf = value.to_bytes_le();
-    arr.copy_from_slice(&buf);
+    arr[..buf.len()].copy_from_slice(&buf);
     arr
 }
 
