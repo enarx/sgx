@@ -144,7 +144,7 @@ impl SecInfo {
     /// Extend page permissions.
     #[inline]
     #[cfg(target_arch = "x86_64")]
-    pub fn extend_permissions(&self, dest: Page) {
+    pub fn extend(&self, dest: Page) {
         unsafe {
             core::arch::asm!(
                 "xchg       {RBX}, rbx",
