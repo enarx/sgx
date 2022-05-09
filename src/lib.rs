@@ -27,6 +27,8 @@ pub mod crypto;
 pub mod page;
 pub mod parameters;
 pub mod signature;
+
+#[cfg(target_arch = "x86_64")]
 pub mod ssa;
 
 /// SGX ENCLU Leaf Instructions
