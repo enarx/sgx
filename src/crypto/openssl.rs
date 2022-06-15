@@ -93,7 +93,7 @@ impl super::PrivateKey for RS256PrivateKey {
 
         Ok(super::SigData {
             signature: arr_from_bn(&s),
-            modulus: arr_from_bn(&*m),
+            modulus: arr_from_bn(m),
             exponent,
             q1: arr_from_bn(&*q1),
             q2: arr_from_bn(&*q2),
