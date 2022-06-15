@@ -7,7 +7,7 @@ use crate::page::{Flags, SecInfo};
 /// page.
 #[repr(u8)]
 #[non_exhaustive]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Class {
     /// SGX Enclave Control Structure (SECS)
     Secs = 0,

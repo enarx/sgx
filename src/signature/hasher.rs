@@ -6,7 +6,7 @@ use core::num::NonZeroU32;
 use core::slice::from_raw_parts;
 
 /// Input length is not a multiple of the page size
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct InvalidSize(());
 
 /// Hashes an enclave producing a measurement

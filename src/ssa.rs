@@ -18,7 +18,7 @@ pub use xsave::XSave;
 
 /// Section 38.9.1.1, Table 38-9
 #[non_exhaustive]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ExitType {
     Hardware,
     Software,
