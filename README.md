@@ -1,4 +1,4 @@
-[![Workflow Status](https://github.com/enarx/sgx/workflows/test/badge.svg)](https://github.com/enarx/sgx/actions?query=workflow%3A%22test%22)
+[![Workflow Status](https://github.com/enarx/sgx/workflows/test/badge.svg)](https://github.com/enarx/sgx/actions?query=workflow%3A%22test%22+branch%3Amain)
 [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/enarx/sgx.svg)](https://isitmaintained.com/project/enarx/sgx "Average time to resolve an issue")
 [![Percentage of issues still open](https://isitmaintained.com/badge/open/enarx/sgx.svg)](https://isitmaintained.com/project/enarx/sgx "Percentage of issues still open")
 ![Maintenance](https://img.shields.io/badge/maintenance-activly--developed-brightgreen.svg)
