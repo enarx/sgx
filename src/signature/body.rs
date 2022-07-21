@@ -14,10 +14,13 @@ impl Parameters {
     pub fn body(&self, mrenclave: [u8; 32]) -> Body {
         Body {
             misc: self.misc,
-            reserved0: [0; 20],
+            cet_attr: Masked { data: 0, mask: 0 },
+            reserved0: [0; 2],
+            ext_fid: [0; 16],
             attr: self.attr,
             mrenclave,
-            reserved1: [0; 32],
+            reserved1: [0; 16],
+            ext_pid: self.ext_pid,
             pid: self.pid,
             svn: self.svn,
         }
@@ -33,10 +36,13 @@ impl Parameters {
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Body {
     misc: Masked<MiscSelect>,
-    reserved0: [u8; 20],
+    cet_attr: Masked<u8>,
+    reserved0: [u8; 2],
+    ext_fid: [u8; 16],
     attr: Masked<Attributes>,
     mrenclave: [u8; 32],
-    reserved1: [u8; 32],
+    reserved1: [u8; 16],
+    ext_pid: [u8; 16],
     pid: u16,
     svn: u16,
 }
@@ -68,6 +74,8 @@ impl Body {
             svn: self.svn,
             misc: self.misc,
             attr: self.attr,
+            ext_pid: self.ext_pid,
+            ext_fid: self.ext_fid,
         }
     }
 }
@@ -80,10 +88,13 @@ mod test {
     testaso! {
         struct Body: 4, 128 => {
             misc: 0,
-            reserved0: 8,
+            cet_attr: 8,
+            reserved0: 10,
+            ext_fid: 12,
             attr: 28,
             mrenclave: 60,
             reserved1: 92,
+            ext_pid: 108,
             pid: 124,
             svn: 126
         }

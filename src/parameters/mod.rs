@@ -48,6 +48,12 @@ pub struct Parameters {
     /// CPU features for the enclave
     pub attr: Masked<Attributes>,
 
+    /// Extended ISV-defined family identifier
+    pub ext_fid: [u8; 16],
+
+    /// Extended ISV-defined product identifier
+    pub ext_pid: [u8; 16],
+
     /// ISV-defined product identifier
     pub pid: u16,
 
