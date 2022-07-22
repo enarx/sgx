@@ -51,7 +51,7 @@ impl super::PrivateKey for RS256PrivateKey {
 
     fn generate(exponent: u8) -> Result<Self, Self::Error> {
         let exponent = bn::BigNum::from_u32(exponent.into()).unwrap();
-        let key = rsa::Rsa::generate_with_e(384 * 8, &*exponent)?;
+        let key = rsa::Rsa::generate_with_e(384 * 8, &exponent)?;
         Ok(Self::new(key))
     }
 
@@ -95,8 +95,8 @@ impl super::PrivateKey for RS256PrivateKey {
             signature: arr_from_bn(&s),
             modulus: arr_from_bn(m),
             exponent,
-            q1: arr_from_bn(&*q1),
-            q2: arr_from_bn(&*q2),
+            q1: arr_from_bn(&q1),
+            q2: arr_from_bn(&q2),
         })
     }
 }
