@@ -70,13 +70,11 @@ impl super::PrivateKey for RS256PrivateKey {
 
         let hash = Sha256::new().chain(author).chain(body).finalize();
 
-        let mut signature = [0u8; 384];
-        let padding = PaddingScheme::new_pkcs1v15_sign(Some(rsa::hash::Hash::SHA2_256));
+        let padding = PaddingScheme::new_pkcs1v15_sign::<Sha256>();
         let sig = self.0.sign(padding, &hash)?;
-        signature.copy_from_slice(&sig);
 
         // Calculate q1 and q2.
-        let s = BigUint::from_bytes_be(&signature);
+        let s = BigUint::from_bytes_be(&sig);
         let m = self.0.n();
         let (q1, qr) = (&s * &s).div_rem(m);
         let q2 = (&s * qr) / m;
