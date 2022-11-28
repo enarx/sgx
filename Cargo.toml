@@ -41,4 +41,4 @@ xsave = { version = "^2.0.0", default-features = false }
 
 [dev-dependencies]
 testaso = "0.1"
-rstest = "^0.15.0"
+rstest = "^0.16.0"
