@@ -31,5 +31,8 @@ bitflags::bitflags! {
 
         /// Enables key separation and sharing
         const KSS = 1 << 7;
+
+        /// Enables the use of AEXNOTIFY
+        const AEXNOTIFY = 1 << 10;
     }
 }
