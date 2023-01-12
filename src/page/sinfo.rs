@@ -110,7 +110,7 @@ impl SecInfo {
             0 => Ok(()),
             11 => Err(AcceptError::PageNotTracked),
             19 => Err(AcceptError::PageAttributesMismatch),
-            ret => panic!("EACCEPT returned an unknown error code: {}", ret),
+            ret => panic!("EACCEPT returned an unknown error code: {ret}"),
         }
     }
 
@@ -137,7 +137,7 @@ impl SecInfo {
         match ret {
             0 => Ok(()),
             19 => Err(AcceptError::PageAttributesMismatch),
-            ret => panic!("EACCEPTCOPY returned an unknown error code: {}", ret),
+            ret => panic!("EACCEPTCOPY returned an unknown error code: {ret}"),
         }
     }
 
