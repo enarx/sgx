@@ -14,6 +14,8 @@
 //!   3. If you are developing an enclave loader, you probably want the
 //!      `parameters` and `page` modules. However, you may also want the
 //!      `signature` module to load a signature.
+//!   4. If you want to parse fields from the CPU certificate, you probably
+//!      want the `pck` module and `rcrypto` feature.
 
 #![no_std]
 #![deny(clippy::exhaustive_enums)]
@@ -27,6 +29,9 @@ pub mod crypto;
 pub mod page;
 pub mod parameters;
 pub mod signature;
+
+#[cfg(feature = "rcrypto")]
+pub mod pck;
 
 #[cfg(target_arch = "x86_64")]
 pub mod ssa;

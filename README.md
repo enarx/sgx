@@ -19,5 +19,7 @@ How to use this crate partly depends on what you are trying to accomplish:
   3. If you are developing an enclave loader, you probably want the
      `parameters` and `page` modules. However, you may also want the
      `signature` module to load a signature.
+  4. If you want to parse fields from the CPU certificate, you probably
+     want the `pck` module and `rcrypto` feature.
 
 License: Apache-2.0

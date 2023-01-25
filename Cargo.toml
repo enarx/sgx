@@ -22,7 +22,7 @@ is-it-maintained-issue-resolution = { repository = "enarx/sgx" }
 is-it-maintained-open-issues = { repository = "enarx/sgx" }
 
 [features]
-rcrypto = ["rand", "rsa", "sha2", "num-integer", "num-traits"]
+rcrypto = ["rand", "rsa", "sha2", "num-integer", "num-traits", "const-oid", "der", "x509",]
 
 [dependencies]
 x86_64 = { version = "^0.14.6", default-features = false }
@@ -35,6 +35,9 @@ num-traits = { version = "^0.2.14", optional = true }
 rand = { version = "^0.8.4", optional = true }
 sha2 = { version = "0.10.2", features = ["oid"], optional = true }
 rsa = { version = "^0.7.1", optional = true }
+const-oid = { version = "0.9.1", default-features = false, optional = true }
+der = { version = "0.6.1", optional = true }
+x509 = { version = "0.1", package = "x509-cert", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 xsave = { version = "^2.0.0", default-features = false }
