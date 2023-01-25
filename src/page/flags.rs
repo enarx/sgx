@@ -30,7 +30,7 @@ impl core::fmt::Display for Flags {
 
         for (flag, val) in opts {
             if self.contains(flag) {
-                write!(f, "{}", val)?;
+                write!(f, "{val}")?;
             }
         }
 
