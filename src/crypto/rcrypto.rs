@@ -3,7 +3,7 @@
 use num_integer::Integer;
 use num_traits::ToPrimitive;
 use rand::thread_rng;
-use rsa::{pkcs1::DecodeRsaPrivateKey, BigUint, PaddingScheme, PublicKeyParts, RsaPrivateKey};
+use rsa::{pkcs1::DecodeRsaPrivateKey, BigUint, Pkcs1v15Sign, PublicKeyParts, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 
 fn arr_from_big(value: &BigUint) -> [u8; 384] {
@@ -70,7 +70,7 @@ impl super::PrivateKey for RS256PrivateKey {
 
         let hash = Sha256::new().chain(author).chain(body).finalize();
 
-        let padding = PaddingScheme::new_pkcs1v15_sign::<Sha256>();
+        let padding = Pkcs1v15Sign::new::<Sha256>();
         let sig = self.0.sign(padding, &hash)?;
 
         // Calculate q1 and q2.
