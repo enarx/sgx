@@ -27,7 +27,7 @@ rcrypto = ["rand", "rsa", "sha2", "num-integer", "num-traits", "const-oid", "der
 [dependencies]
 x86_64 = { version = "^0.14.6", default-features = false }
 openssl = { version = "^0.10.36", optional = true }
-bitflags = "^1.3.2"
+bitflags = "^2.0.2"
 
 # Used by the rcrypto feature (see above).
 num-integer = { version = "^0.1.44", optional = true }
