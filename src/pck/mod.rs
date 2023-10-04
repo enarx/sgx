@@ -43,8 +43,8 @@ impl<'a> SgxExtension<'a> {
             .find(|e| e.extn_id == SgxExtensionRaw::OID)
             .ok_or(SgxExtensionError::MissingSgxExtension)?;
 
-        let sgx_extension: SgxExtensionRaw =
-            Decode::from_der(extension.extn_value).map_err(SgxExtensionError::DerDecodingError)?;
+        let sgx_extension: SgxExtensionRaw = Decode::from_der(extension.extn_value.as_bytes())
+            .map_err(SgxExtensionError::DerDecodingError)?;
 
         Ok(Self {
             fmspc: sgx_extension.fmspc.bytes,
