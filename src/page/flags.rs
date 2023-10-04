@@ -5,6 +5,7 @@ bitflags::bitflags! {
     ///
     /// This type identifies the flags of one or more pages. Some of these
     /// flags indicate permissions. Others, indicate state.
+    #[derive(Copy, Clone, Debug)]
     pub struct Flags: u8 {
         const READ = 1 << 0;
         const WRITE = 1 << 1;

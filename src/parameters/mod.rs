@@ -22,7 +22,7 @@ bitflags::bitflags! {
     ///
     /// This type controls which extra data will be provided in the SSA page
     /// after an AEX.
-    #[derive(Default)]
+    #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct MiscSelect: u32 {
         /// Report #PF and #GP information
         const EXINFO = 1 << 0;

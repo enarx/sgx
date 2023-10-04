@@ -2,7 +2,7 @@
 
 bitflags::bitflags! {
     /// Expresses the non-XSAVE related enclave features
-    #[derive(Default)]
+    #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Features: u64 {
         /// Enclave has been initialized by EINIT
         ///
