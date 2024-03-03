@@ -5,7 +5,7 @@ jobs:
     name: cargo fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup Rust toolchain
         run: rustup show && rustup update && rustup component add rustfmt
       - name: cargo fmt
@@ -15,7 +15,7 @@ jobs:
     name: cargo clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup Rust toolchain
         run: rustup show && rustup update && rustup component add clippy
       - name: cargo clippy
@@ -25,7 +25,7 @@ jobs:
     name: cargo readme
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo +stable install cargo-readme
       - run: cargo readme > README.md && git diff --exit-code
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - uses: enarx/spdx@master
         with:
           licenses: Apache-2.0
