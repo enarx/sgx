@@ -6,14 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain }}
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: ${{ matrix.profile.flag }} --features=${{ matrix.features }}
+      - name: Install Rust
+        run: rustup toolchain install ${{ matrix.toolchain }}
+      - name: cargo test
+        run: cargo +${{ matrix.toolchain }} test --features=${{ matrix.features }} ${{ matrix.profile.flag }}
     strategy:
       fail-fast: false
       matrix:
@@ -47,14 +43,10 @@ jobs:
     runs-on: [self-hosted, linux, sgx1]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain }}
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: ${{ matrix.profile.flag }} --all-features
+      - name: Install Rust
+        run: rustup toolchain install ${{ matrix.toolchain }}
+      - name: cargo test
+        run: cargo +${{ matrix.toolchain }} test  --all-features ${{ matrix.profile.flag }}
     strategy:
       fail-fast: false
       matrix:
