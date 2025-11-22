@@ -4,7 +4,7 @@ version = "0.6.1"
 authors = ["The Enarx Project Developers"]
 license = "Apache-2.0"
 edition = "2021"
-rust-version = "1.67"
+rust-version = "1.85"
 homepage = "https://github.com/enarx/sgx"
 repository = "https://github.com/enarx/sgx"
 description = "Library for Intel SGX"
@@ -22,6 +22,7 @@ is-it-maintained-issue-resolution = { repository = "enarx/sgx" }
 is-it-maintained-open-issues = { repository = "enarx/sgx" }
 
 [features]
+default = []
 rcrypto = ["rand", "rsa", "sha2", "num-integer", "num-traits", "const-oid", "der", "x509",]
 
 [dependencies]
