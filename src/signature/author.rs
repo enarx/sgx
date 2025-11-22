@@ -65,10 +65,10 @@ mod test {
 
     #[test]
     fn author_instantiation() {
-        let author = Author::new(0x2000_03_30, 0u32);
+        let author = Author::new(0x2000_0330, 0u32);
         assert_eq!(author.header1, Author::HEADER1);
         assert_eq!(author.vendor, 0u32);
-        assert_eq!(author.date, 0x2000_03_30);
+        assert_eq!(author.date, 0x2000_0330);
         assert_eq!(author.header2, Author::HEADER2);
         assert_eq!(author.swdefined, 0u32);
         assert_eq!(author.reserved, [0; 21]);

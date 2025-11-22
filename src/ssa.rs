@@ -110,7 +110,9 @@ impl<T> StateSaveArea<T> {
     pub fn vector(&self) -> Option<Vector> {
         match self.gpr.exitinfo & Self::VALID {
             0 => None,
-            _ => Some(unsafe { transmute(self.gpr.exitinfo as u8) }),
+            _ => Some(unsafe {
+                transmute::<u8, x86_64::structures::idt::ExceptionVector>(self.gpr.exitinfo as u8)
+            }),
         }
     }
 }

@@ -18,7 +18,7 @@ pub struct SgxExtensionRaw<'a> {
     pub platform_config: Option<PlatformConfiguration>,    // Only on multi-CPU "Platform" systems
 }
 
-impl<'a> AssociatedOid for SgxExtensionRaw<'a> {
+impl AssociatedOid for SgxExtensionRaw<'_> {
     const OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113741.1.13.1");
 }
 
@@ -30,7 +30,7 @@ pub struct PpID<'a> {
     pub bytes: &'a [u8],
 }
 
-impl<'a> AssociatedOid for PpID<'a> {
+impl AssociatedOid for PpID<'_> {
     const OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113741.1.13.1.1");
 }
 
@@ -40,7 +40,7 @@ pub struct Tcb<'a> {
     pub inner: TCBInner<'a>,
 }
 
-impl<'a> AssociatedOid for Tcb<'a> {
+impl AssociatedOid for Tcb<'_> {
     const OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113741.1.13.1.2");
 }
 
@@ -89,7 +89,7 @@ pub struct TcbCpuSvn<'a> {
     pub bytes: &'a [u8],
 }
 
-impl<'a> AssociatedOid for TcbCpuSvn<'a> {
+impl AssociatedOid for TcbCpuSvn<'_> {
     const OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113741.1.13.1.2.18");
 }
 
@@ -100,7 +100,7 @@ pub struct PceID<'a> {
     pub bytes: &'a [u8],
 }
 
-impl<'a> AssociatedOid for PceID<'a> {
+impl AssociatedOid for PceID<'_> {
     const OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113741.1.13.1.3");
 }
 
@@ -111,7 +111,7 @@ pub struct FmSpc<'a> {
     pub bytes: &'a [u8],
 }
 
-impl<'a> AssociatedOid for FmSpc<'a> {
+impl AssociatedOid for FmSpc<'_> {
     const OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113741.1.13.1.4");
 }
 
@@ -141,7 +141,7 @@ pub struct PlatformInstanceID<'a> {
     pub bytes: &'a [u8],
 }
 
-impl<'a> AssociatedOid for PlatformInstanceID<'a> {
+impl AssociatedOid for PlatformInstanceID<'_> {
     const OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.113741.1.13.1.6");
 }
 
