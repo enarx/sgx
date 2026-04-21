@@ -33,7 +33,7 @@ bitflags = "^2.4.1"
 # Used by the rcrypto feature (see above).
 num-integer = { version = "^0.1.45", optional = true }
 num-traits = { version = "^0.2.16", optional = true }
-rand = { version = "^0.8.5", optional = true }
+rand = { version = "^0.10.1", optional = true }
 sha2 = { version = "0.10.8", features = ["oid"], optional = true }
 rsa = { version = "^0.9.3", features = ["sha2"], optional = true }
 const-oid = { version = "^0.9.5", default-features = false, optional = true }
