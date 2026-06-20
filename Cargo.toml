@@ -26,7 +26,7 @@ default = []
 rcrypto = ["rand", "rsa", "sha2", "num-integer", "num-traits", "const-oid", "der", "x509",]
 
 [dependencies]
-x86_64 = { version = "^0.14.11", default-features = false }
+x86_64 = { version = "^0.15.4", default-features = false }
 openssl = { version = "^0.10.59", optional = true }
 bitflags = "^2.4.1"
 
